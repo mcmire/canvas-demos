@@ -87,9 +87,9 @@ $.extend(Boid.prototype, {
   draw: function() {
     var rule1 = this.boidColl.rule1(this);
     var rule2 = this.boidColl.rule2(this);
-    //var rule3 = this.boidColl.rule3(this);
+    var rule3 = this.boidColl.rule3(this);
     var boundRepulsion = this.boidColl.keepWithinBounds(this);
-    this.velocity = Vector.add(this.velocity, rule1, rule2, boundRepulsion);
+    this.velocity = Vector.add(this.velocity, rule1, rule2, rule3, boundRepulsion);
     this.position = Vector.add(this.position, this.velocity);
     this.cxt.fillRect(this.position[0], this.position[1], Boid.size[0], Boid.size[1]);
   }
@@ -135,7 +135,7 @@ $.extend(BoidCollection.prototype, {
   // another boid move it as far away again as it already is. 
   rule2: function(boid) {
     var center = [0, 0];
-    var range = 2;
+    var range = 5;
     for (var i=0; i<this.boids.length; i++) {
       var b = this.boids[i];
       if (b == boid) continue;
@@ -146,13 +146,29 @@ $.extend(BoidCollection.prototype, {
     }
     return center;
   },
+  // Rule 3: Boids try to match velocity with near boids.
+  // This is similar to Rule 1, however instead of averaging the positions of the other boids we
+  // average the velocities. We calculate a 'perceived velocity', pvJ, then add a small portion
+  // (about an eighth) to the boid's current velocity.
+  rule3: function(boid) {
+    var totalVelocity = [0, 0];
+    for (var i=0; i<this.boids.length; i++) {
+      var b = this.boids[i];
+      if (b == boid) continue;
+      totalVelocity = Vector.add(totalVelocity, b.velocity);
+    }
+    var avgVelocity = Vector.divide(totalVelocity, this.boids.length - 1);
+    var difference = Vector.subtract(avgVelocity, boid.velocity);
+    var vector = Vector.divide(difference, 8);
+    return vector;
+  },
   keepWithinBounds: function(boid) {
     var xmin = 0,
         ymin = 0,
         xmax = this.canvas.canvasElement.width,
         ymax = this.canvas.canvasElement.height;
     var v = [0, 0];
-    var force = 0.3;
+    var force = 5;
     
     if (boid.position[0] < xmin) v[0] = force;
     else if (boid.position[0] > xmax) v[0] = -force;
@@ -170,7 +186,7 @@ var Canvas = function(id) {
   this.speed = 4;
   this.frameRate = 50;
   
-  this.boidColl = new BoidCollection(this, 100);
+  this.boidColl = new BoidCollection(this, 20);
 }
 $.extend(Canvas.prototype, {
   clear: function() {
