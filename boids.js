@@ -1,97 +1,77 @@
-var LOGGING = true;
-
-Function.prototype.bind = function(self) {
-  var func = this;
-  return function() { func.call(self, arguments) }
-}
-Math.rand = function() {
-  var min = 0, max = 0;
-  if (arguments.length == 2) {
-    min = arguments[0];
-    max = arguments[1];
-  } else {
-    max = arguments[0];
-  }
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-function log(msg) {
-  if (LOGGING) console.log(msg);
-}
-
-var Vector = {};
-Vector.operators = [
-  {name: "add",      code: "+",        factory: "accum", type: "arithmetic"},
-  {name: "subtract", code: "-",        factory: "accum", type: "arithmetic"},
-  {name: "multiply", code: "*",        factory: "accum", type: "arithmetic"},
-  {name: "divide",   code: "/",        factory: "accum", type: "arithmetic"},
-  {name: "gt",       code: ">",        factory: "accum", type: "boolean"},
-  {name: "lt",       code: "<",        factory: "accum", type: "boolean"},
-  {name: "gte",      code: ">=",       factory: "accum", type: "boolean"},
-  {name: "lte",      code: "<=",       factory: "accum", type: "boolean"},
-  {name: "eq",       code: "==",       factory: "accum", type: "boolean"},
-  {name: "abs",      code: "Math.abs", factory: "map",   type: "arithmetic"}
-];
-Vector.coerce = function(arg, numAxes) {
-  if (arg instanceof Array) {
-    return arg;
-  } else {
-    var arr = [];
-    for (var i=0; i<numAxes; i++) arr.push(arg);
-    return arr;
-  }
-}
-Vector.functionFactories = {
-  accum: function(op) {
-    var code = "vector[j] = vector[j] "+op.code+" v[j]";
-    return function() {
-      var vector = Vector.coerce(arguments[0], 2).slice(0); // dupe the array
-      for (var i=1; i<arguments.length; i++) {
-        var v = Vector.coerce(arguments[i], 2);
-        for (var j=0; j<v.length; j++) eval(code);
-      }
-      if (op.type == "boolean") {
-        var ret = true;
-        for (var i=0; i<vector.length; i++) ret = ret && vector[i];
-        return ret;
-      } else {
-        return vector;
-      }
-    }
-  },
-  map: function(op) {
-    var code = "vector[i] = "+op.code+"(vector[i])";
-    return function(vector) {
-      var vector = vector.slice(0); // dupe the array
-      for (var i=0; i<vector.length; i++) eval(code);
-      return vector;
-    }
-  }
-}
-for (var i=0; i<Vector.operators.length; i++) {
-  var op = Vector.operators[i];
-  Vector[op.name] = Vector.functionFactories[op.factory](op);
-}
-
 var Boid = function(boidColl) {
   this.boidColl = boidColl;
   this.canvas = boidColl.canvas;
   this.cxt = boidColl.cxt;
-  this.position = [
+  this.pos = [
     Math.rand(this.canvas.canvasElement.width),
     Math.rand(this.canvas.canvasElement.height)
   ];
-  this.velocity = [Math.rand(-10, 10), Math.rand(-10, 10)];
+  this.disp = [Math.rand(-10, 10), Math.rand(-10, 10)];
 }
+$.extend(Boid, {
+  size: [3, 3],
+  maxSpeed: 5,
+  containmentLimit: 40,
+  containmentForce: 2
+})
 Boid.size = [3, 3];
 $.extend(Boid.prototype, {
   draw: function() {
-    var rule1 = this.boidColl.rule1(this);
-    var rule2 = this.boidColl.rule2(this);
-    var rule3 = this.boidColl.rule3(this);
-    var boundRepulsion = this.boidColl.keepWithinBounds(this);
-    this.velocity = Vector.add(this.velocity, rule1, rule2, rule3, boundRepulsion);
-    this.position = Vector.add(this.position, this.velocity);
-    this.cxt.fillRect(this.position[0], this.position[1], Boid.size[0], Boid.size[1]);
+    var v1 = this.boidColl.applyRules(this);
+    var v2 = this.containment(this);
+    this.disp = Vector.add(this.disp, v1, v2);
+    //this.disp = this.limitVelocity(this.disp);
+    this.pos = Vector.add(this.pos, this.disp);
+    this.cxt.fillRect(this.pos[0], this.pos[1], Boid.size[0], Boid.size[1]);
+  },
+  limitVelocity: function(v) {
+    var m = Vector.magnitude(v),
+        k = Boid.maxSpeed;
+    if (m > k) {
+      return [k * (v[0] / m), k * (v[1] / m)];
+    } else {
+      return v;
+    }
+  },
+  containmentRule: function() {
+    var x = this.pos[0],
+        y = this.pos[1];
+    var xa = 0,
+        ya = 0,
+        xb = this.canvas.canvasElement.width,
+        yb = this.canvas.canvasElement.height;
+    var k = Boid.containmentLimit;
+    var f = Boid.containmentForce;
+    
+    var v = [0, 0];
+    
+    // smooth repulsion:
+    // * at |x - p| = k, factor = 0
+    // * at |x - p| = 0, factor = 1
+    // so, force in x direction is ((k - |x - p|) / k)
+    
+    var dxa = x, dxb = (xb - x),
+        dya = y, dyb = (yb - y);
+    
+    if (dxa < k) {
+      var xr = f * ((k - dxa) / k);
+      v[0] = xr;
+    }
+    else if (dxb < k) {
+      var xr = f * ((k - dxb) / k);
+      v[0] = -xr;
+    }
+    
+    if (dya < k) {
+      var yr = f * ((k - dya) / k);
+      v[1] = yr;
+    }
+    else if (dyb < k) {
+      var yr = f * ((k - dyb) / k);
+      v[1] = -yr;
+    }
+    
+    return v;
   }
 })
 
@@ -101,131 +81,104 @@ var BoidCollection = function(canvas, length) {
   this.boids = [];
   for (var i=0; i<length; i++) this.boids.push(new Boid(this));
 }
+$.extend(BoidCollection, {
+  separationLimit: 20
+})
 $.extend(BoidCollection.prototype, {
   draw: function() {
     for (var i=0; i<this.boids.length; i++) this.boids[i].draw();
   },
-  // Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
-  // However, the 'centre of mass' is a property of the entire flock; it is not something that would
-  // be considered by an individual boid. I prefer to move the boid toward its 'perceived centre', 
-  // which is the centre of all the other boids, not including itself
-  rule1: function(boid) {
-    var center = [0, 0];
-    for (var i=0; i<this.boids.length; i++) {
-      var b = this.boids[i];
-      if (b == boid) continue;
-      center = Vector.add(center, b.position);
-    }
-    center = Vector.divide(center, this.boids.length - 1);
-    /*
-    //this.cxt.save();
-      this.cxt.moveTo(boid.position[0], boid.position[1]);
-      this.cxt.lineTo(center[0], center[1]);
-      //this.cxt.strokeStyle = '#ff0000';
-      this.cxt.stroke();
-    //this.cxt.restore();
-    */
-    var distance = Vector.subtract(center, boid.position)
-    var vector = Vector.divide(distance, 100);
-    return vector;
+  applyRules: function(boid) {
+    var cohesionDisp = this.cohesionRule(boid);
+    var separationDisp = this.separationRule(boid);
+    var alignmentDisp = this.alignmentRule(boid);
+    return Vector.add(cohesionDisp, separationDisp, alignmentDisp);
   },
-  // Rule 2: Boids try to keep a small distance away from other objects (including other boids).
-  // The purpose of this rule is to for boids to make sure they don't collide into each other. I
-  // simply look at each boid, and if it's within a defined small distance of
-  // another boid move it as far away again as it already is. 
-  rule2: function(boid) {
-    var center = [0, 0];
-    var range = 5;
+  //
+  // Cohesion: Boids try to fly towards the center of mass of neighboring boids.
+  //
+  // The "center of mass" here, though, is actually the perceived center, because when a boid is
+  // trying to figure out where the center is, though, it's not going to include itself (since it
+  // can't see itself).
+  //
+  cohesionRule: function(boid) {
+    var sum = [0, 0];
+    var n = this.boids.length;
+    var j = 0;
+    for (var i=0; i<n; i++) {
+      var b = this.boids[i];
+      if (b == boid) continue;
+      sum = Vector.add(sum, b.pos);
+      j++;
+    }
+    // the avg is the centroid
+    var avg = Vector.divide(sum, j);
+    // the diff is the line pointing from me to the centroid
+    var diff = Vector.subtract(avg, boid.pos);
+    // so, my displacement vector is a small movement toward the centroid
+    var v = Vector.divide(diff, 100);
+    return v;
+  },
+  //
+  // Separation: Boids try to keep a small distance away from other objects (including other boids).
+  //
+  // If we didn't have this here, the boids would collide with each other. In order to prevent this,
+  // we simply look at each boid, and if it's within a certain range of another boid, we start to
+  // move it as far away again as it already is (with a smooth acceleration).
+  //
+  // It's worth noting that this rule will apply doubly -- if two boids are within the same
+  // disallowed range, both will back away from each other.
+  //
+  separationRule: function(boid) {
+    var v = [0, 0];
+    var k = BoidCollection.separationLimit;
     for (var i=0; i<this.boids.length; i++) {
       var b = this.boids[i];
       if (b == boid) continue;
-      var diff = Vector.subtract(b.position, boid.position)
-      var dist = Vector.abs(diff);
-      var withinRange = Vector.lt(dist, range)
-      if (withinRange) center = Vector.subtract(center, diff);
+      // distance here is a scalar, the length of the line from me to you
+      var dist = Vector.distance(b.pos, boid.pos);
+      if (dist < k) {
+        // the diff is the line pointing from you to me
+        var diff = Vector.subtract(boid.pos, b.pos);
+        // there is a stronger force when I am nearer to you and a weaker force when I am farther
+        // at dist = 0, factor = 1
+        // at dist = k, factor = 0
+        var 
+        // if there are multiple boids within proximity, I will back away from their positions collectively
+        v = Vector.add(v, diff);
+      }
     }
-    return center;
+    return v;
   },
   // Rule 3: Boids try to match velocity with near boids.
   // This is similar to Rule 1, however instead of averaging the positions of the other boids we
-  // average the velocities. We calculate a 'perceived velocity', pvJ, then add a small portion
+  // average the velocities. We calculate a 'perceived velocity', then add a small portion
   // (about an eighth) to the boid's current velocity.
-  rule3: function(boid) {
+  alignmentRule: function(boid) {
     var totalVelocity = [0, 0];
     for (var i=0; i<this.boids.length; i++) {
       var b = this.boids[i];
       if (b == boid) continue;
-      totalVelocity = Vector.add(totalVelocity, b.velocity);
+      totalVelocity = Vector.add(totalVelocity, b.disp);
     }
     var avgVelocity = Vector.divide(totalVelocity, this.boids.length - 1);
-    var difference = Vector.subtract(avgVelocity, boid.velocity);
-    var vector = Vector.divide(difference, 8);
-    return vector;
-  },
-  keepWithinBounds: function(boid) {
-    var xmin = 0,
-        ymin = 0,
-        xmax = this.canvas.canvasElement.width,
-        ymax = this.canvas.canvasElement.height;
-    var v = [0, 0];
-    var force = 5;
-    
-    if (boid.position[0] < xmin) v[0] = force;
-    else if (boid.position[0] > xmax) v[0] = -force;
-    
-    if (boid.position[1] < ymin) v[1] = force;
-    else if (boid.position[1] > ymax) v[1] = -force;
-    
-    return v;
+    var difference = Vector.subtract(avgVelocity, boid.disp);
+    var displacement = Vector.divide(difference, 8);
+    return displacement;
   }
 })
 
-var Canvas = function(id) {
-  this.canvasElement = $(id)[0];
-  this.cxt = this.canvasElement.getContext("2d");
-  this.speed = 4;
-  this.frameRate = 50;
-  
-  this.boidColl = new BoidCollection(this, 20);
-}
-$.extend(Canvas.prototype, {
-  clear: function() {
-    this.cxt.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-    //this.canvasElement.width = this.canvasElement.width;
-    //log("Clearing the canvas, width is " + this.canvasElement.width + ", height is " + this.canvasElement.height);
+var BoidsCanvas = Canvas.extend({
+  init: function(id) {
+    this._super(id);
+    this.boidColl = new BoidCollection(this, 100);
   },
   draw: function() {
-    this.clear();
-    var self = this;
-    self.boidColl.draw()
-    //setTimeout(function() {  }, 500);
-  },
-  start: function() {
-    this.timer = setInterval(this.draw.bind(this), this.frameRate);
-  },
-  stop: function() {
-    clearInterval(this.timer);
-    this.timer = null;
-  },
-  isRunning: function() {
-    return !!this.timer;
+    this._super();
+    this.boidColl.draw();
   }
 })
 
 $(function() {
-  var canvas = new Canvas("#canvas");
-  $('#startstop').click(function() {
-    if (canvas.isRunning()) {
-      canvas.stop();
-      $(this).html("Start");
-    } else {
-      canvas.start();
-      $(this).html("Stop");
-    }
-    return false;
-  });
-  $('#draw').click(function() {
-    canvas.draw();
-    return false;
-  })
+  var canvas = new BoidsCanvas("#canvas");
 })

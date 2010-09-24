@@ -1,13 +1,14 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-  <title>Boids Demo</title>
+  <title>Repulsion Demo</title>
   <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script> -->
   <script src="jquery.min.js"></script>
+  <script src="inheritance.js"></script>
   <script src="vector.js"></script>
   <script src="utils.js"></script>
   <script src="canvas.js"></script>
-  <script src="boids.js"></script>
+  <script src="repulsion.js"></script>
   <link rel="stylesheet" href="boids.css">
 </head>
 <body>
@@ -15,6 +16,7 @@
     <a href="#" id="startstop">Start</a> |
     <a href="#" id="draw">Draw</a>
   </p>
-  <canvas id="canvas" width="800" height="500"></canvas>
+  <div id="debug"></div>
+  <canvas id="canvas" width="800" height="300"></canvas>
 </body>
 </html>
