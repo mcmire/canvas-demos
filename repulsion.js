@@ -2,6 +2,7 @@ function clearDebug() {
   $('#debug').html("");
 }
 function debug(msg) {
+  return;
   $('#debug').html($('#debug').html() + "<p>"+msg+"</p>");
 }
 
@@ -51,6 +52,7 @@ var RepulsionCanvas = Canvas.extend({
   init: function(id) {
     this._super(id);
     this.ball = new Ball(this, {radius: 10});
+    this.frameRate = 20;
   },
   draw: function() {
     this._super();
@@ -66,7 +68,7 @@ var RepulsionCanvas = Canvas.extend({
     
     var bb = this.bounds();
     var ob = obj.bounds();
-    var f = 5;
+    var f = 0.5;
     var newvel = obj.vel.slice(0);
     var k = 30;
     
