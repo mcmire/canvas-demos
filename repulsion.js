@@ -1,5 +1,8 @@
+function clearDebug() {
+  $('#debug').html("");
+}
 function debug(msg) {
-  $('#debug').html(msg);
+  $('#debug').html($('#debug').html() + "<p>"+msg+"</p>");
 }
 
 var Ball = Class.extend({
@@ -14,26 +17,22 @@ var Ball = Class.extend({
       Math.rand(this.canvas.canvasElement.height - (this.radius / 2))
     ];
     */
-    this.pos = [
-      this.canvas.canvasElement.width - (this.radius / 2) - 100,
-      this.canvas.canvasElement.height - (this.radius / 2) - 100
-    ]
+    this.pos = [700, 50]
     /*
     this.vel = [
       Math.rand(-this.speed, this.speed),
       Math.rand(-this.speed, this.speed)
     ];
     */
-    this.vel = [10, 5]
+    this.vel = [4, 2]
   },
   draw: function() {
+    clearDebug();
     var vectors = this.canvas.repulsion(this);
     this.pos = vectors[0];
     this.vel = vectors[1];
-    debug(
-      "<p>Velocity: " + this.vel + "</p>" +
-      "<p>Position: " + this.pos + "</p>"
-    );
+    debug("Velocity: " + this.vel);
+    debug("Position: " + this.pos);
     this.cxt.beginPath();
     this.cxt.arc(this.pos[0], this.pos[1], this.radius, 0, 2*Math.PI);
     this.cxt.closePath();
@@ -67,9 +66,9 @@ var RepulsionCanvas = Canvas.extend({
     
     var bb = this.bounds();
     var ob = obj.bounds();
-    var f = obj.vel;
+    var f = 5;
     var newvel = obj.vel.slice(0);
-    var k = 50;
+    var k = 30;
     
     // The distance the object is past the bound
     var dxa = Math.abs(ob[0][0] - bb[0][0]);
@@ -83,25 +82,30 @@ var RepulsionCanvas = Canvas.extend({
     // "safe area" which is designated by k), the further it's pushed away.
     // As long as the object is near the bound, it's continually pushed away, and the
     // effect is that it eventually changes direction.
+    //
+    // FIXME: The problem with this is that when the object exits the force field it doesn't
+    // quite return to its original velocity... also the force field may push with a bigger
+    // force than the object itself
     if (dxa < k) {
-      var xr = f[0] * ((k - dxa) / k);
+      var extra = ((k - dxa) / k);
+      var xr = f * extra;
       newvel[0] += xr;
-      newvel[1] += xr * velslope;
     }
     if (dxb < k) {
-      var xr = f[0] * ((k - dxb) / k);
+      var extra = ((k - dxb) / k);
+      var xr = f * extra;
+      debug("extra: ((" + k + " - " + dxb + ") / " + k + ") = " + extra)
       newvel[0] -= xr;
-      newvel[1] -= xr * velslope;
     }
     if (dya < k) {
-      var yr = f[1] * ((k - dya) / k);
+      var extra = ((k - dya) / k);
+      var yr = f * extra;
       newvel[1] += yr;
-      newvel[0] += yr * (1/velslope);
     }
     if (dyb < k) {
-      var yr = f[1] * ((k - dyb) / k);
+      var extra = ((k - dyb) / k);
+      var yr = f * extra;
       newvel[1] -= yr;
-      newvel[0] -= yr * (1/velslope);
     }
     
     var newpos = Vector.add(obj.pos, newvel);
