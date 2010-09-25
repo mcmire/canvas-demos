@@ -39,10 +39,11 @@ var Canvas = Class.extend({
   isRunning: function() {
     return !!this.timer;
   },
-  bounds: function() {
+  bounds: function(miter) {
+    var miter = miter || 0;
     return [
-      [0, this.canvasElement.width],
-      [0, this.canvasElement.height]
+      [0 + miter, this.canvasElement.width - miter],
+      [0 + miter, this.canvasElement.height - miter]
     ]
   }
 })

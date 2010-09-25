@@ -1,70 +1,3 @@
-Vector.repulsion = function(objBounds, fieldBounds, k, pos, vel, restrictionType) {
-  // objBounds are [[xa, xb], [ya, yb]]
-  // fieldBounds are [[xa, xb], [ya, yb]]
-  
-  // what the points would be after the velocity change
-  //var points2 = $.map(function(p) { return Vector.add(p, vel) });
-  
-  // smooth repulsion:
-  // * at |x - p| = k, factor = 0
-  // * at |x - p| = 0, factor = 1
-  // so, factor for x direction is ((k - |x - p|) / k)
-  var vel2 = vel.slice(0); // dup the velocity
-  var disp = [0, 0];
-  if (restrictionType == "inside") {
-    /*
-    var diffs = [
-      Math.abs(points[0][0] - bounds[0][0]),
-      Math.abs(points[0][1] - bounds[0][1]),
-      Math.abs(points[1][0] - bounds[1][0]),
-      Math.abs(points[1][1] - bounds[1][1])
-    ]
-    if (dxa < k) {
-      var xr = f[0] * ((k - dxa) / k);
-      v[0] += xr;
-    }
-    if (dxb < k) {
-      var xr = f[0] * ((k - dxb) / k);
-      v[0] -= xr;
-    }
-    if (dya < k) {
-      var yr = f[1] * ((k - dya) / k);
-      v[1] += yr;
-    }
-    if (dyb < k) {
-      var yr = f[1] * ((k - dyb) / k);
-      v[1] -= yr;
-    }
-    */
-    // TODO: Back up the object by some inverse portion of the velocity enough to reach the bound
-    if (objBounds[0][0] < fieldBounds[0][0]) {
-      disp = Vector.subtract(disp, vel)
-      disp[0] = fieldBounds[0][0] - objBounds[0][0];
-    } else if (objBounds[0][1] > fieldBounds[0][1]) {
-      disp[0] = fieldBounds[0][1] - objBounds[0][1];
-    }
-    if (objBounds[1][0] < fieldBounds[1][0]) {
-      disp[1] = fieldBounds[1][0] - objBounds[1][0];
-    } else if (objBounds[1][1] > fieldBounds[1][1]) {
-      disp[1] = fieldBounds[1][1] - objBounds[1][1];
-    }
-    
-    // calculate what the objBounds would be after the displacement
-    var objBounds2 = [
-      [objBounds[0][0] + disp[0], objBounds[0][1] + disp[0]],
-      [objBounds[1][0] + disp[1], objBounds[1][1] + disp[1]]
-    ]
-    
-    if (objBounds2[0][0] == fieldBounds[0][0] || objBounds2[0][1] == fieldBounds[0][1]) {
-      vel2[1] = vel2[1] * -1;
-    }
-    if (objBounds2[1][0] == fieldBounds[1][0] || objBounds2[1][1] == fieldBounds[1][1]) {
-      vel2[0] = vel2[0] * -1;
-    }
-  }
-  return [disp, vel2];
-}
-
 function debug(msg) {
   $('#debug').html(msg);
 }
@@ -75,29 +8,27 @@ var Ball = Class.extend({
     this.cxt = canvas.cxt;
     this.radius = 10;
     this.speed = 10;
+    /*
     this.pos = [
       Math.rand(this.canvas.canvasElement.width - (this.radius / 2)),
       Math.rand(this.canvas.canvasElement.height - (this.radius / 2))
     ];
+    */
+    this.pos = [
+      this.canvas.canvasElement.width - (this.radius / 2) - 100,
+      this.canvas.canvasElement.height - (this.radius / 2) - 100
+    ]
+    /*
     this.vel = [
       Math.rand(-this.speed, this.speed),
       Math.rand(-this.speed, this.speed)
     ];
+    */
+    this.vel = [10, 5]
   },
   draw: function() {
-    /*
-    //console.log("Position: " + this.pos);
-    //console.log("Velocity: " + this.vel);
-    var newpos = Vector.add(this.pos, this.vel);
-    //console.log("Position after adding velocity: " + this.pos);
-    var vectors = this.canvas.repulsion(this.bounds(newpos), newpos, this.vel);
-    this.pos = Vector.add(this.pos, this.vel, vectors[0]);
-    //console.log("Position after repulsion: " + this.pos);
-    this.vel = vectors[1];
-    //console.log("Velocity after repulsion: " + this.vel);
-    */
-    var vectors = this.canvas.collision(this);
-    this.pos = Vector.add(this.pos, vectors[0]);
+    var vectors = this.canvas.repulsion(this);
+    this.pos = vectors[0];
     this.vel = vectors[1];
     debug(
       "<p>Velocity: " + this.vel + "</p>" +
@@ -109,6 +40,7 @@ var Ball = Class.extend({
     this.cxt.fill();
   },
   bounds: function(pos) { // x1, x2, y1, y2
+    var pos = pos || this.pos;
     return [
       [pos[0] - this.radius, pos[0] + this.radius],
       [pos[1] - this.radius, pos[1] + this.radius]
@@ -125,43 +57,104 @@ var RepulsionCanvas = Canvas.extend({
     this._super();
     this.ball.draw();
   },
-  repulsion: function(objBounds, pos, vel) {
-    return Vector.repulsion(objBounds, this.bounds(), RepulsionCanvas.repulsionLimit, pos, vel, "inside")
+  repulsion: function(obj) {
+    // Smooth repulsion:
+    // * at |x - p| = k, factor = 0
+    // * at |x - p| = 0, factor = 1
+    // So, factor for x direction is ((k - |x - p|) / k)
+    
+    /* Calculate new displacement */
+    
+    var bb = this.bounds();
+    var ob = obj.bounds();
+    var f = obj.vel;
+    var newvel = obj.vel.slice(0);
+    var k = 50;
+    
+    // The distance the object is past the bound
+    var dxa = Math.abs(ob[0][0] - bb[0][0]);
+    var dxb = Math.abs(ob[0][1] - bb[0][1]);
+    var dya = Math.abs(ob[1][0] - bb[1][0]);
+    var dyb = Math.abs(ob[1][1] - bb[1][1]);
+    var velslope = newvel[1] / newvel[0];
+    
+    // Modify the velocity by the amount the object is near the bound.
+    // The closer the object is to the bound (and, technically, the further it is past the
+    // "safe area" which is designated by k), the further it's pushed away.
+    // As long as the object is near the bound, it's continually pushed away, and the
+    // effect is that it eventually changes direction.
+    if (dxa < k) {
+      var xr = f[0] * ((k - dxa) / k);
+      newvel[0] += xr;
+      newvel[1] += xr * velslope;
+    }
+    if (dxb < k) {
+      var xr = f[0] * ((k - dxb) / k);
+      newvel[0] -= xr;
+      newvel[1] -= xr * velslope;
+    }
+    if (dya < k) {
+      var yr = f[1] * ((k - dya) / k);
+      newvel[1] += yr;
+      newvel[0] += yr * (1/velslope);
+    }
+    if (dyb < k) {
+      var yr = f[1] * ((k - dyb) / k);
+      newvel[1] -= yr;
+      newvel[0] -= yr * (1/velslope);
+    }
+    
+    var newpos = Vector.add(obj.pos, newvel);
+    return [newpos, newvel];
   },
   collision: function(obj) {
-    // calculate new displacement
-    var cb = this.bounds();
+    /* Calculate new displacement */
+    
+    var bb = this.bounds();
+    // Go ahead and calculate new position based on present velocity
+    // even if it goes past the bound
     var newpos = Vector.add(obj.pos, obj.vel);
     var ob = obj.bounds(newpos);
-    var disp = [0, 0];
-    if (ob[0][0] < cb[0][0]) {
-      var extra = cb[0][0] - ob[0][0];
-      disp[0] = extra;
-      disp[1] = extra * (obj.vel[1] / obj.vel[0]);
-    } else if (ob[0][1] > cb[0][1]) {
-      var extra = cb[0][1] - ob[0][1];
-      disp[0] = extra;
-      disp[1] = extra * (obj.vel[1] / obj.vel[0]);
-    }
-    if (ob[1][0] < cb[1][0]) {
-      var extra = cb[1][0] - ob[1][0];
-      disp[1] = extra;
-      disp[0] = extra * (obj.vel[0] / obj.vel[1]);
-    } else if (ob[1][1] > cb[1][1]) {
-      var extra = cb[1][1] - ob[1][1];
-      disp[1] = extra;
-      disp[0] = extra * (obj.vel[0] / obj.vel[1]);
-    }
-    var disp = Vector.add(obj.vel, disp);
     
-    // calculate new velocity
-    var newpos = Vector.add(obj.pos, disp);
-    var ob = obj.bounds(newpos);
-    var vel = obj.vel.slice(0);
-    if (ob[0][0] == cb[0][0] || ob[0][1] == cb[0][1]) vel[0] = vel[0] * -1;
-    if (ob[1][0] == cb[1][0] || ob[1][1] == cb[1][1]) vel[1] = vel[1] * -1;
+    // The distance the object is past the bound
+    var dxa = (bb[0][0] - ob[0][0]);
+    var dxb = (ob[0][1] - bb[0][1]);
+    var dya = (bb[1][0] - ob[1][0]);
+    var dyb = (ob[1][1] - bb[1][1]);
+    var velslope = (obj.vel[1] / obj.vel[0]);
     
-    return [disp, vel];
+    // If the position did cross over a bound, back up the object by a portion
+    // of the velocity which will put the object exactly touching the bound
+    if (dxa > 0) {
+      newpos[0] += dxa;
+      newpos[1] += dxa * velslope;
+    }
+    else if (dxb > 0) {
+      newpos[0] -= dxb;
+      newpos[1] -= dxb * velslope;
+    }
+    else if (dya > 0) {
+      newpos[1] += dya;
+      newpos[0] += dya * (1/velslope);
+    }
+    else if (dyb > 0) {
+      newpos[1] -= dyb;
+      newpos[0] -= dyb * (1/velslope);
+    }
+    
+    /* Calculate new velocity which will apply for animation steps after the object
+       hitting the bound */
+    
+    // We have to separate this from the above logic since pos + vel alone may end up
+    // hitting the bound in which case none of the above logic has been executed
+    if (dxa > 0 || dxb > 0 || dya > 0 || dyb > 0) {
+      ob = obj.bounds(newpos);
+    }
+    var newvel = obj.vel.slice(0);
+    if (ob[0][0] == bb[0][0] || ob[0][1] == bb[0][1]) newvel[0] = newvel[0] * -1;
+    if (ob[1][0] == bb[1][0] || ob[1][1] == bb[1][1]) newvel[1] = newvel[1] * -1;
+    
+    return [newpos, newvel];
   }
 })
 RepulsionCanvas.repulsionLimit = 30;
