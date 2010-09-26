@@ -45,5 +45,24 @@ var Canvas = Class.extend({
       [0 + miter, this.canvasElement.width - miter],
       [0 + miter, this.canvasElement.height - miter]
     ]
+  },
+  randomPos: function(bx, by) {
+    if (!by) by = bx;
+    return [
+      Math.rand(this.canvasElement.width - bx),
+      Math.rand(this.canvasElement.height - by)
+    ];
+  },
+  randomVel: function(speed) {
+    return [
+      Math.rand(-speed, speed),
+      Math.rand(-speed, speed)
+    ];
+  },
+  center: function() {
+    return [
+      this.canvasElement.width / 2,
+      this.canvasElement.height / 2
+    ]
   }
 })

@@ -141,11 +141,11 @@ var RepulsionCanvas = Canvas.extend({
     }
     else if (dya > 0) {
       newpos[1] += dya;
-      newpos[0] += dya * (1/velslope);
+      newpos[0] += dya / velslope;
     }
     else if (dyb > 0) {
       newpos[1] -= dyb;
-      newpos[0] -= dyb * (1/velslope);
+      newpos[0] -= dyb / velslope;
     }
     
     /* Calculate new velocity which will apply for animation steps after the object

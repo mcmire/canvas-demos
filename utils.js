@@ -2,7 +2,7 @@ var LOGGING = true;
 
 Function.prototype.bind = function(self) {
   var func = this;
-  return function() { func.call(self, arguments) }
+  return function() { func.apply(self, arguments) }
 }
 Math.rand = function() {
   var min = 0, max = 0;
