@@ -134,7 +134,7 @@ var GravityCanvas = Canvas.extend({
   },
   generateMouseBall: function(mpos) {
     var m = Math.rand(1, 4)
-    var r = 3 + ((m - 1) / (4 - 1)) * (10 - 3)
+    var r = 3 + ((m - 1) / (4 - 1)) * (10 - 3); // 1-4 => 3-10
     return new Ball(this, {
       radius: r,
       mass: m * Math.pow(10, 6),
