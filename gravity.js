@@ -1,75 +1,72 @@
-function clearDebug() {
-  $('#debug').html("");
-}
-function debug(msg) {
-  return;
-  $('#debug').html($('#debug').html() + "<p>"+msg+"</p>");
-}
-
-var Ball = Class.extend({
+var GravityObject = Class.extend({
   init: function(canvas, options) {
     this.canvas = canvas;
     this.cxt = canvas.cxt;
     this.options = options;
-    this.radius = options.radius;
+    this.width = options.width;
+    this.height = options.height;
     this.pos = options.pos || this.canvas.randomPos(this.radius * 4);
-    this.vel = [0, 0];
+    this.vel = options.vel || [0, 0];
     //this.speed = options.speed || 10;
     //this.vel = options.vel || this.canvas.randomVel(this.speed);
     this.color = options.color || "black";
   },
   draw: function() {
-    //var vectors = this.canvas.collision(this);
-    //this.pos = vectors[0];
-    //this.vel = vectors[1];
-    
-    //console.log("Position: " + this.pos)
-    
-    this.drawCircle();
+    this.drawShape();
   },
-  drawCircle: function() {
+  drawShape: function() {
     this.cxt.save();
     this.cxt.fillStyle = this.color;
     this.cxt.beginPath();
-    this.cxt.arc(this.pos[0], this.pos[1], this.radius, 0, 2*Math.PI);
+    var slope = this.vel[1] / this.vel[0];
+    var theta;
+    if (this.vel[0] == 0) {
+      // piping the slope into atan would cause a division by zero error
+      theta = 0;
+    } else {
+      theta = Math.atan(slope);
+      // atan's domain is -pi/2 to pi/2
+      // so if the x-value is negative, we need to rotate the angle around
+      if (this.vel[0] < 0) theta += Math.PI;
+    }
+    this.cxt.translate(this.pos[0], this.pos[1])
+    this.cxt.rotate(theta);
+    this.cxt.triangle(0, 0, this.width, this.height);
     this.cxt.closePath();
     this.cxt.fill();
     this.cxt.restore();
-  },
-  bounds: function(pos) { // x1, x2, y1, y2
-    var pos = pos || this.pos;
-    return [
-      [pos[0] - this.radius, pos[0] + this.radius],
-      [pos[1] - this.radius, pos[1] + this.radius]
-    ]
   }
 })
-Ball.generate = function(canvas, options) {
-  var m = Math.rand(1, 4)
-  var r = 3 + ((m - 1) / (4 - 1)) * (10 - 3); // 1-4 => 3-10
-  var options = $.extend({
-    radius: r,
+GravityObject.generate = function(canvas, options) {
+  var m = Math.rand(3, 6)
+  var r = 6 + ((m - 1) / (4 - 1)) * (20 - 6); // 3-6 => 6-20
+  var options = $.extend(options, {
+    width: r,
+    height: r * 1.5,
     mass: m * Math.pow(10, 6)
-  }, options);
+  });
   return new this(canvas, options);
 }
 
 var GravityCanvas = Canvas.extend({
   init: function(id) {
     this._super(id);
-    this.frameRate = 20;
-    this.balls = [];
-    var ball = Ball.generate(this, {
+    this.frameRate = 30;
+    var obj = new GravityObject(this, {
       type: "attractive",
-      pos: Vector.subtract(this.center(), [300, 0])
+      pos: Vector.subtract(this.center(), [300, 0]),
+      vel: [2, 2],
+      width: 10,
+      height: 15,
+      mass: 3 * Math.pow(10, 6)
     })
-    this.balls.push(ball);
+    this.objects = [obj];
   },
   draw: function() {
-    clearDebug();
     this._super();
-    for (var i=0; i<this.balls.length; i++) this.balls[i].draw();
-    if (this.mouseball) this.mouseball.drawCircle();
+    clearDebug();
+    for (var i=0; i<this.objects.length; i++) this.objects[i].draw();
+    if (this.mouseObject) this.mouseObject.drawShape();
   },
   bindMouseCallbacks: function() {
     $(this.canvasElement).bind({
@@ -81,24 +78,24 @@ var GravityCanvas = Canvas.extend({
     })
   },
   onMouseEnter: function(event) {
-    this.mouseball = this.generateMouseBall(this.getMousePos(event));
+    this.mouseObject = this.generateMouseObject(this.getMousePos(event));
   },
   onMouseLeave: function(event) {
-    this.mouseball = null;
+    this.mouseObject = null;
   },
   onMouseMove: function(event) {
-    this.mouseball.pos = this.getMousePos(event);
+    this.mouseObject.pos = this.getMousePos(event);
   },
   onMouseDown: function(event) {
-    this.mouseball.mousestart = this.getMousePos(event);
+    this.mouseObject.mouseStart = this.getMousePos(event);
   },
   onMouseUp: function(event) {
     var mp = this.getMousePos(event);
-    this.mouseball.mouseend = mp;
-    this.mouseball.vel = Vector.divide(Vector.subtract(this.mouseball.mouseend, this.mouseball.mousestart), 6);
-    this.mouseball.color = "black";
-    this.balls.push(this.mouseball);
-    this.mouseball = this.generateMouseBall(mp);
+    this.mouseObject.mouseEnd = mp;
+    this.mouseObject.vel = Vector.divide(Vector.subtract(this.mouseObject.mouseEnd, this.mouseObject.mouseStart), 6);
+    this.mouseObject.color = "black";
+    this.objects.push(this.mouseObject);
+    this.mouseObject = this.generateMouseObject(mp);
   },
   getMousePos: function(event) {
     // from http://diveintohtml5.org/canvas.html
@@ -106,68 +103,19 @@ var GravityCanvas = Canvas.extend({
     var my = event.pageY - this.canvasElement.offsetTop;
     return [mx, my];
   },
-  generateMouseBall: function(mpos) {
-    return Ball.generate(this, {
+  generateMouseObject: function(mpos) {
+    return GravityObject.generate(this, {
       type: "attractive",
       pos: mpos,
       color: "rgba(0,0,0,0.4)"
     })
-  },
-  collision: function(obj) {
-    /* Calculate new displacement */
-    
-    var bb = this.bounds();
-    // Go ahead and calculate new position based on present velocity
-    // even if it goes past the bound
-    var newpos = Vector.add(obj.pos, obj.vel);
-    var ob = obj.bounds(newpos);
-    
-    // The distance the object is past the bound
-    var dxa = (bb[0][0] - ob[0][0]);
-    var dxb = (ob[0][1] - bb[0][1]);
-    var dya = (bb[1][0] - ob[1][0]);
-    var dyb = (ob[1][1] - bb[1][1]);
-    var velslope = (obj.vel[1] / obj.vel[0]);
-    
-    // If the position did cross over a bound, back up the object by a portion
-    // of the velocity which will put the object exactly touching the bound
-    if (dxa > 0) {
-      newpos[0] += dxa;
-      newpos[1] += dxa * velslope;
-    }
-    else if (dxb > 0) {
-      newpos[0] -= dxb;
-      newpos[1] -= dxb * velslope;
-    }
-    else if (dya > 0) {
-      newpos[1] += dya;
-      newpos[0] += dya / velslope;
-    }
-    else if (dyb > 0) {
-      newpos[1] -= dyb;
-      newpos[0] -= dyb / velslope;
-    }
-    
-    /* Calculate new velocity which will apply for animation steps after the object
-       hitting the bound */
-    
-    // We have to separate this from the above logic since pos + vel alone may end up
-    // hitting the bound in which case none of the above logic has been executed
-    if (dxa > 0 || dxb > 0 || dya > 0 || dyb > 0) {
-      ob = obj.bounds(newpos);
-    }
-    var newvel = obj.vel.slice(0);
-    if (ob[0][0] == bb[0][0] || ob[0][1] == bb[0][1]) newvel[0] = newvel[0] * -1;
-    if (ob[1][0] == bb[1][0] || ob[1][1] == bb[1][1]) newvel[1] = newvel[1] * -1;
-    
-    return [newpos, newvel];
   }
 })
 
 Gravity.mixin({
   canvasClass: GravityCanvas,
-  objectClasses: [Ball],
-  objects: function() { return this.balls }
+  objectClasses: [GravityObject],
+  objects: function() { return this.objects }
 });
 
 $(function() {

@@ -1,7 +1,7 @@
 var Canvas = Class.extend({
   init: function(id) {
     this.canvasElement = $(id)[0];
-    this.cxt = this.canvasElement.getContext("2d");
+    this.cxt = $.extend(this.canvasElement.getContext("2d"), Canvas.CanvasContextHelpers);
     this.speed = 4;
     this.frameRate = 50;
 
@@ -66,3 +66,10 @@ var Canvas = Class.extend({
     ]
   }
 })
+Canvas.CanvasContextHelpers = {
+  triangle: function(x, y, width, height) {
+    this.moveTo(x - height/2, y - width/2);
+    this.lineTo(x - height/2, y + width/2);
+    this.lineTo(x + height/2, y);
+  }
+}
