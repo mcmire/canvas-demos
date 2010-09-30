@@ -51,14 +51,15 @@ var Collision = {
     };
     
     $.each(args.objectClasses, function(i, klass) {
-      klass.prototype.init = (function(original) {
+      klass.prototype.draw = (function(original) {
         return function() {
           var vectors = this.canvas.collision(this);
           this.pos = vectors[0];
           this.vel = vectors[1];
           original.apply(this, arguments);
         }
-      })(this.prototype.init);
+      })(this.prototype.draw);
+      
       klass.prototype.bounds = function(pos) { // x1, x2, y1, y2
         var pos = pos || this.pos;
         return [

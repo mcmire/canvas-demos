@@ -9,5 +9,6 @@ function clearDebug() {
 }
 
 function debug(msg) {
+  return;
   $('#debug').html($('#debug').html() + "<p>"+msg+"</p>");
 }

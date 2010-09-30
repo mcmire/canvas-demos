@@ -18,18 +18,8 @@ var GravityObject = Class.extend({
     this.cxt.save();
     this.cxt.fillStyle = this.color;
     this.cxt.beginPath();
-    var slope = this.vel[1] / this.vel[0];
-    var theta;
-    if (this.vel[0] == 0) {
-      // piping the slope into atan would cause a division by zero error
-      theta = 0;
-    } else {
-      theta = Math.atan(slope);
-      // atan's domain is -pi/2 to pi/2
-      // so if the x-value is negative, we need to rotate the angle around
-      if (this.vel[0] < 0) theta += Math.PI;
-    }
     this.cxt.translate(this.pos[0], this.pos[1])
+    var theta = Vector.angle(this.vel);
     this.cxt.rotate(theta);
     this.cxt.triangle(0, 0, this.width, this.height);
     this.cxt.closePath();
@@ -55,7 +45,7 @@ var GravityCanvas = Canvas.extend({
     var obj = new GravityObject(this, {
       type: "attractive",
       pos: Vector.subtract(this.center(), [300, 0]),
-      vel: [2, 2],
+      vel: [0, 0],
       width: 10,
       height: 15,
       mass: 3 * Math.pow(10, 6)

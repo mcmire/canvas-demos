@@ -28,6 +28,7 @@ var Canvas = Class.extend({
   },
   draw: function() {
     this.clear();
+    clearDebug();
   },
   start: function() {
     this.timer = setInterval(this.draw.bind(this), this.frameRate);
@@ -54,6 +55,7 @@ var Canvas = Class.extend({
     ];
   },
   randomVel: function(speed) {
+    var speed = speed || 10;
     return [
       Math.rand(-speed, speed),
       Math.rand(-speed, speed)
@@ -71,5 +73,21 @@ Canvas.CanvasContextHelpers = {
     this.moveTo(x - height/2, y - width/2);
     this.lineTo(x - height/2, y + width/2);
     this.lineTo(x + height/2, y);
+  },
+  arrow: function(p1, p2) {
+    var dy = p2[1] - p1[1];
+    var dx = p1[1] - p1[0];
+    //var m = dy/dx;
+    //var w = -dx/dy;
+    var f = 0.01;
+    var sdy = -dx - 1;
+    var sdx = f * dy;
+    this.moveTo(p1[0]-sdx, p1[1]-sdy);
+    this.lineTo(p1[0]+sdx, p1[1]+sdy);
+    this.lineTo(p2[0]+sdx, p2[1]+sdy);
+    this.lineTo(p2[0]+(sdx*2), p2[1]+(sdy*2));
+    this.lineTo(p2[0]-(dx*2), p2[1]+(dy*2));
+    this.lineTo(p2[0]-(sdx*2), p2[1]-(sdy*2));
+    this.lineTo(p2[0]-sdx, p2[1]-sdy);
   }
 }

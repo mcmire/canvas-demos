@@ -33,13 +33,13 @@ var Gravity = {
       
       // FAIL: If this mass is smaller, then the gforce is smaller
       // Is that supposed to happen?
-      klass.prototype.gravityForce = function(ball2) {
+      klass.prototype.gravityForce = function(obj) {
         var G = 6.67428 * Math.pow(10, -11)
-        var r = Vector.distance(this.pos, ball2.pos);
-        var F = this.forceDirection * G * (this.mass * ball2.mass) / Math.pow(r, 2);
+        var r = Vector.distance(this.pos, obj.pos);
+        var F = this.forceDirection * G * (this.mass * obj.mass) / Math.pow(r, 2);
         // http://www.richardsimoes.com/gravity.html
-        var Fx = (this.pos[0] - ball2.pos[0]) / r * F;
-        var Fy = (this.pos[1] - ball2.pos[1]) / r * F;
+        var Fx = (this.pos[0] - obj.pos[0]) / r * F;
+        var Fy = (this.pos[1] - obj.pos[1]) / r * F;
         return [Fx, Fy];
       }
     })

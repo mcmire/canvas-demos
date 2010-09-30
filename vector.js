@@ -62,6 +62,9 @@ $.extend(Vector, {
   magnitude: function(v) {
     return Math.sqrt(v[0]*v[0] + v[1]*v[1]);
   },
+  slope: function(v1, v2) {
+    return (v2[1] - v1[1]) / (v2[0] - v1[0]);
+  },
   invert: function(v) {
     return Vector.multiplyConstant(v, -1);
   },
@@ -80,6 +83,25 @@ $.extend(Vector, {
       }
     }
     return v1;
+  },
+  angle: function(v) {
+    var slope = v[1] / v[0];
+    var theta = 0;
+    if (v[0] == 0) {
+      // piping the slope into atan would cause a division by zero error
+      // so we'll just pick these ourselves
+      if (v[1] > 0) {
+        theta = Math.PI / 2;
+      } else if (v[1] < 0) {
+        theta = -Math.PI / 2;
+      }
+    } else {
+      theta = Math.atan(slope);
+      // atan's domain is -pi/2 to pi/2
+      // so if the x-value is negative, we need to rotate the angle around
+      if (v[0] < 0) theta += Math.PI;
+    }
+    return theta;
   }
 })
 for (var i=0; i<Vector.operators.length; i++) {
