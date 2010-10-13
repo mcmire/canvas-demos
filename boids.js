@@ -17,36 +17,6 @@ var Boid = Class.extend({
   },
   move: function() {
     this.pos = Vector.add(this.pos, this.vel);
-
-    /*
-    debug("vel: " + this.vel);
-    if (this.lastpos) {
-      this.cxt.save();
-      this.cxt.beginPath();
-      this.cxt.moveTo(this.lastpos[0], this.lastpos[1]);
-      this.cxt.lineTo(this.pos[0], this.pos[1]);
-      this.cxt.closePath();
-      this.cxt.strokeStyle = "blue";
-      this.cxt.stroke();
-      this.cxt.restore();
-    }
-    */
-
-    /*
-    //if (boid.index == 0) {
-
-      this.cxt.save();
-      this.cxt.beginPath();
-      this.cxt.moveTo(this.pos[0], this.pos[1]);
-      this.cxt.lineTo(this.pos[0] - this.vel[0], this.pos[1] - this.vel[1]);
-      this.cxt.closePath();
-      this.cxt.strokeStyle = "blue";
-      this.cxt.stroke();
-      this.cxt.restore();
-    //}
-    */
-
-    this.lastpos = this.pos;
   },
   draw: function() {
     this.move();
@@ -63,17 +33,11 @@ var Boid = Class.extend({
     this.cxt.closePath();
     this.cxt.fill();
     this.cxt.restore();
-    /*
-    this.cxt.font = "bold 12px sans-serif";
-    this.cxt.fillText(this.index + " (" + this.pos[0] + ", " + this.pos[1] + ")", this.pos[0] - 30, this.pos[1] - 15)
-    */
   }
 })
 $.extend(Boid, {
   size: [3, 3],
-  maxSpeed: 5//,
-  //containmentLimit: 40,
-  //containmentForce: 2
+  maxSpeed: 5
 })
 
 var BoidCollection = {
@@ -90,11 +54,11 @@ var BoidCollection = {
       }
     },
     applyRules: function(boid) {
-      //var cohesionVel = this.cohesionRule(boid);
+      var cohesionVel = this.cohesionRule(boid);
       //debug("cohesionVel: " + cohesionVel);
       var separationVel = this.separationRule(boid);
-      debug("separationVel: " + separationVel);
-      //var alignmentVel = this.alignmentRule(boid);
+      //debug("separationVel: " + separationVel);
+      var alignmentVel = this.alignmentRule(boid);
       //debug("alignmentVel: " + alignmentVel);
       return Vector.add(
         //cohesionVel,
@@ -148,67 +112,18 @@ var BoidCollection = {
         var r1 = Vector.distance(b.pos, boid.pos);
         if (r1 < kr) {
           // There is a stronger force when I am nearer to you and a weaker force when I am farther
-          var a = 1/20;
+          var a = 0.05;
           var r2 = (kr - r1) / Math.pow((a * r1) + Math.sqrt(kr / kv), 2);
           // Basically we want to scale the vector between me and you down to m.
-          // This is just derived from the pythagorean theorem + the slope formula
-          //  given r and m solving for x and y.
-          //
-          // This is just a quicker way of saying something like:
-          //
-          //   Vector.multiply(Vector.normalize(Vector.subtract(b.pos, boid.pos)), m)
-          //
-          // FIXME: This still isn't working -- all boids are shifting left -- x always ends up being negative
+          // This is just derived from the triangle similarity rule (all sides of a similar
+          // triangle are in proportion).
           var m = r2 / r1;
-          var x1 = b.pos[0] - boid.pos[0];
-          var y1 = b.pos[1] - boid.pos[1];
-          var x2 = x1 * m;
-          var y2 = y1 * m;
-          var v = [x2, y2];
-          /*
-          var v;
-          if (boid.pos[0] == b.pos[0]) {
-            var x = 0;
-            var y = r2;
-            if (boid.vel[1] < 0) y *= -1;
-            v = [x, y];
-          } else {
-            var m = Vector.slope(boid.pos, b.pos);
-            var x = Math.sqrt((r2*r2) / (m*m + 1));
-            if (boid.vel[0] < 0) x *= -1;
-            var y = m * x;
-            v = [x, y];
-          }
-          */
-          /*
-          if (boid.index == 0) {
-          */
-            debug("<b>boid.index: " + boid.index + "</b>")
-            debug("b.index: " + b.index);
-            debug("r1: " + r1);
-            debug("r2: (" + kr + " - " + r1 + ") / Math.pow((" + a + " * " + r1 + ") + Math.sqrt(" + kr + " / " + kv + ")), 2) = " + r2);
-            debug("m: " + m);
-            debug("v: " + v);
-          /*
-          }
-          */
-          // if there are multiple boids within proximity, I will back away from their positions collectively
+          var v = Vector.multiply(Vector.subtract(b.pos, boid.pos), m);
+          // If there are multiple boids within proximity, I will back away from their positions collectively
           vector = Vector.subtract(vector, v);
         }
       }
-      /*
-      if (boid.index == 0) {
-        debug("vector: " + vector);
-        /*
-        this.cxt.beginPath();
-        var theta = Vector.angle(Vector.subtract([x,y], boid.pos));
-        this.cxt.rotate(theta);
-        this.cxt.triangle(boid.pos[0], boid.pos[0], 3, 3);
-        this.cxt.closePath();
-        this.cxt.fill();
-        *\/
-      }
-      */
+      if (Vector.gt(0)) boid.oldVel = boid.vel;
       return vector;
     },
     //
@@ -240,27 +155,27 @@ var BoidCollection = {
     var coll = [];
     coll.canvas = canvas;
     coll.cxt = canvas.cxt;
-    /*
     for (var i=0; i<length; i++) {
       var boid = new Boid(coll, {width: 5, height: 8, index: i});
       coll.push(boid);
     }
-    */
+    /*
     coll.push( new Boid(coll, {width: 5, height: 8, index: 0, pos: [50, 200], vel: [5, 0]}) )
     coll.push( new Boid(coll, {width: 5, height: 8, index: 1, pos: [350, 200],  vel: [-5, 0]}) )
     coll.push( new Boid(coll, {width: 5, height: 8, index: 2, pos: [600, 100], vel: [0, 5]}) )
     coll.push( new Boid(coll, {width: 5, height: 8, index: 3, pos: [600, 400], vel: [0, -5]}) )
+    */
     $.extend(coll, BoidCollection.Methods);
     return coll;
   },
-  sepDistLimit: 100,
+  sepDistLimit: 50,
   sepVelLimit: 5
 };
 
 var BoidsCanvas = Canvas.extend({
   init: function(id) {
     this._super(id);
-    this.boidColl = BoidCollection.create(this, 5);
+    this.boidColl = BoidCollection.create(this, 30);
   },
   draw: function() {
     this._super();
