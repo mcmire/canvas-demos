@@ -9,6 +9,6 @@ function clearDebug() {
 }
 
 function debug(msg) {
-  return;
+  if ($('#debug').css('display') == "none") return;
   $('#debug').html($('#debug').html() + "<p>"+msg+"</p>");
 }

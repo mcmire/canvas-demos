@@ -49,22 +49,23 @@ var Collision = {
 
       return [newpos, newvel];
     };
-    
+
     $.each(args.objectClasses, function(i, klass) {
-      klass.prototype.draw = (function(original) {
+      klass.prototype.aim = (function(_super) {
         return function() {
+          _super.apply(this, arguments);
           var vectors = this.canvas.collision(this);
-          this.pos = vectors[0];
           this.vel = vectors[1];
-          original.apply(this, arguments);
+          //this.pos = vectors[0];
+          //this.alreadyMoved = true;
         }
-      })(this.prototype.draw);
-      
+      })(klass.prototype.aim);
+
       klass.prototype.bounds = function(pos) { // x1, x2, y1, y2
         var pos = pos || this.pos;
         return [
-          [pos[0] - this.width/2, pos[0] + this.width/2],
-          [pos[1] - this.height/2, pos[1] + this.height/2]
+          [pos[0] - this.width()/2, pos[0] + this.width()/2],
+          [pos[1] - this.height()/2, pos[1] + this.height()/2]
         ]
       }
     });
