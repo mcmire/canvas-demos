@@ -16,9 +16,12 @@ var CanvasObject = Class.extend({
   draw: function() {
     this.alreadyAimed = false;
     this.alreadyMoved = false;
+    this.plan();
+    this.drawShape();
+  },
+  plan: function() {
     this.aim();
     this.move();
-    this.drawShape();
   },
   aim: function() {
     throw new NotImplementedError("You need to implement CanvasObject#aim");
