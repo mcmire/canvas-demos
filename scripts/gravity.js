@@ -41,7 +41,7 @@ GravityObject.generate = function(canvas, options) {
 var GravityCanvas = Canvas.extend({
   init: function(id) {
     this._super(id);
-    this.frameRate = 30;
+    this.fps = 30;
     var obj = new GravityObject(this, {
       type: "attractive",
       pos: Vector.subtract(this.center(), [300, 0]),

@@ -1,50 +1,100 @@
 var Canvas = Class.extend({
-  init: function(id) {
-    this.canvasElement = $(id)[0];
-    this.cxt = $.extend(this.canvasElement.getContext("2d"), Canvas.CanvasContextHelpers);
-    this.speed = 4;
-    this.frameRate = 50;
+  init: function(id, options) {
+    this.$wrapperElement = $(id);
+    this.options = options;
+    if (!this.options.fps) this.options.fps = 30;
+    if (!this.options.width) this.options.width = 800;
+    if (!this.options.height) this.options.height = 500;
 
-    var canvas = this;
-    $('#startstop').click(function() {
-      if (canvas.isRunning()) {
-        canvas.stop();
-        $(this).html("Start");
-      } else {
-        canvas.start();
-        $(this).html("Stop");
-      }
-      return false;
-    });
-    $('#draw').click(function() {
-      canvas.draw();
-      return false;
-    })
+    this._addControls();
+    if (this.options.debug) this._addDebug();
+    if (this.options.trackFps) this._addFpsDisplay();
+    if (this.options.showClock) this._addClock();
+    this._addCanvas();
+
+    this.cxt = this.$canvasElement[0].getContext("2d");
+    $.extend(this.cxt, Canvas.CanvasContextHelpers);
+    this.mspf = 1000 / this.options.fps;
+
+    this.frameNo = 0;
+    this.state = "stopped";
+    this.objects = [];
   },
-  clear: function() {
-    this.cxt.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-    //this.canvasElement.width = this.canvasElement.width;
-    //log("Clearing the canvas, width is " + this.canvasElement.width + ", height is " + this.canvasElement.height);
+  addObject: function(klass, opts) {
+    var obj = new klass(this, opts);
+    this.objects.push(obj);
   },
-  draw: function() {
+  drawOne: function() {
     this.clear();
-    clearDebug();
+    this._drawObjects();
+    this.frameNo++;
+  },
+  redraw: function() {
+    if (this.options.trackFps) this._dumpFps();
+    if (this.options.showClock) this._redrawClock();
+    this.drawOne();
   },
   start: function() {
-    this.timer = setInterval(this.draw.bind(this), this.frameRate);
+    this.reset();
+    this.clearTimer();
+    this.revive();
+    this.$starterBtn.text("Stop");
+    this.$pauserBtn.attr("disabled", false);
+    this.$drawBtn.attr("disabled", true);
+  },
+  kill: function() {
+    this.clearTimer();
+    this.startTime = null;
+    this.state = "stopped";
   },
   stop: function() {
-    clearInterval(this.timer);
+    this.kill();
+    this.$starterBtn.text("Start");
+    this.$pauserBtn.attr("disabled", true);
+    this.$drawBtn.attr("disabled", false);
+  },
+  clearTimer: function() {
+    if (this.timer) clearInterval(this.timer);
     this.timer = null;
   },
-  isRunning: function() {
-    return !!this.timer;
+  pause: function() {
+    this.clearTimer();
+    this.state = "paused";
+    this.$pauserBtn.text("Resume");
+    this.$starterBtn.text("Start");
   },
+  startTimer: function() {
+    // TODO: This should subtract time paused or something...
+    this.startTime = new Date();
+    this.redraw();
+    this.timer = setInterval($.proxy(this, 'redraw'), this.mspf);
+  },
+  revive: function() {
+    this.startTimer();
+    this.state = "running";
+  },
+  resume: function() {
+    this.revive();
+    this.$pauserBtn.text("Pause");
+    this.$starterBtn.text("Stop");
+  },
+  reset: function() {
+    this.frameNo = 0;
+    this.kill();
+    this.clear();
+  },
+  clear: function() {
+    this.cxt.clearRect(0, 0, this.options.width, this.options.height);
+    //this.options.width = this.options.width;
+    //log("Clearing the canvas, width is " + this.options.width + ", height is " + this.options.height);
+    if (this.options.debug) this._clearDebug();
+  },
+
   bounds: function(miter) {
     var miter = miter || 0;
     return [
-      [0 + miter, this.canvasElement.width - miter],
-      [0 + miter, this.canvasElement.height - miter]
+      [0 + miter, this.options.width - miter],
+      [0 + miter, this.options.height - miter]
     ]
   },
   randomPos: function(bx, by) {
@@ -62,8 +112,8 @@ var Canvas = Class.extend({
         break;
     }
     return [
-      Math.rand(this.canvasElement.width - bx),
-      Math.rand(this.canvasElement.height - by)
+      Math.rand(this.options.width - bx),
+      Math.rand(this.options.height - by)
     ];
   },
   randomVel: function(speed) {
@@ -75,11 +125,94 @@ var Canvas = Class.extend({
   },
   center: function() {
     return [
-      this.canvasElement.width / 2,
-      this.canvasElement.height / 2
+      this.options.width / 2,
+      this.options.height / 2
     ]
+  },
+
+  _clearDebug: function() {
+    this.$debugDiv.html("");
+  },
+  debug: function(msg) {
+    if (this.debug) this.$debugDiv.append("<p>"+msg+"</p>");
+  },
+
+  /****** Private methods ******/
+  _addControls: function() {
+    var $div = $('<p id="canvas-controls" />');
+    var canvas = this;
+    var $pauserBtn = $('<button disabled="disabled">Pause</button>');
+    var $drawBtn = $('<button>Next frame</button>');
+    var $starterBtn = $('<button>Start</button>');
+    var $resetBtn = $('<button>Reset</button>');
+    $pauserBtn.click(function() {
+      if (canvas.state == "paused") {
+        canvas.resume();
+      } else {
+        canvas.pause();
+      }
+      return false;
+    });
+    $drawBtn.click(function() {
+      canvas.drawOne();
+      return false;
+    })
+    $starterBtn.click(function() {
+      if (canvas.state == "running") {
+        canvas.stop();
+      } else {
+        canvas.start();
+      }
+      return false;
+    });
+    $resetBtn.click(function() {
+      canvas.reset();
+      return false;
+    });
+    $div.append($starterBtn).append($pauserBtn).append($drawBtn).append($resetBtn);
+    this.$wrapperElement.append($div);
+
+    this.$pauserBtn = $pauserBtn;
+    this.$drawBtn = $drawBtn;
+    this.$starterBtn = $starterBtn;
+    this.$resetBtn = $resetBtn;
+  },
+  _addCanvas: function() {
+    this.$canvasElement = $('<canvas />').attr({ width: this.options.width, height: this.options.height })
+    this.$wrapperElement.append(this.$canvasElement);
+  },
+  _addDebug: function() {
+    this.$debugDiv = $('<p id="canvas-debug">(debug goes here)</p>')
+    this.$wrapperElement.append(this.$debugDiv);
+  },
+  _drawObjects: function() {
+    $.each(this.objects, function(i, obj) {
+      if (obj.drawable) obj.redraw();
+    });
+  },
+  _addFpsDisplay: function() {
+    this.$fpsDiv = $('<p id="canvas-fps">f/s:</p>');
+    this.$wrapperElement.append(this.$fpsDiv);
+  },
+  _dumpFps: function() {
+    if (!this.frameNo || !this.startTime) return;
+    var now = new Date();
+    var timeElapsed = (now - this.startTime) / 1000;
+    var fps = this.frameNo / timeElapsed;
+    var mspf = 1000 / fps;
+    this.$fpsDiv.html("f/s: " + fps + "<br />ms/f: " + mspf);
+  },
+  _addClock: function() {
+    this.$clockDiv = $('<p id="canvas-clock">Time elapsed:</p>');
+    this.$wrapperElement.append(this.$clockDiv);
+  },
+  _redrawClock: function() {
+    var now = new Date();
+    var diff = (now - this.startTime) / 1000;
+    this.$clockDiv.html("Time elapsed: " + diff + " s");
   }
 })
+
 Canvas.CanvasContextHelpers = {
   line: function(x1, y1, x2, y2, options) {
     var options = options || {};

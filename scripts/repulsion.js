@@ -12,7 +12,6 @@ function()
     setOptions: function(options) {
       this._super(options);
       this.radius = options.radius;
-      this.speed = options.speed;
     },
     defaultPosition: function() {
       return [700, 50];
@@ -20,7 +19,7 @@ function()
     defaultVelocity: function() {
       return [4, 2];
     },
-    plan: function() {
+    move: function() {
       var vectors = this.canvas.repulsion(this);
       this.pos = vectors[0];
       this.vel = vectors[1];
@@ -42,8 +41,8 @@ function()
   var RepulsionCanvas = Canvas.extend({
     init: function(id) {
       this._super(id);
-      this.ball = new Ball(this, {radius: 10, speed: 10});
-      this.frameRate = 20;
+      this.ball = new Ball(this, {radius: 10});
+      this.fps = 20;
     },
     draw: function() {
       this._super();

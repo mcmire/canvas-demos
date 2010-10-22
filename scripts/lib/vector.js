@@ -102,6 +102,9 @@ $.extend(Vector, {
       if (v[0] < 0) theta += Math.PI;
     }
     return theta;
+  },
+  beyond: function(v1, v2) {
+    return (v1[0] > v2[0] || v1[1] > v2[1]);
   }
 })
 for (var i=0; i<Vector.operators.length; i++) {

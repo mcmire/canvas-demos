@@ -1,8 +1,3 @@
-Function.prototype.bind = function(self) {
-  var func = this;
-  return function() { func.apply(self, arguments) }
-}
-
 Math.rand = function() {
   var min = 0, max = 0;
   if (arguments.length == 2) {
