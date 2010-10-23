@@ -15,7 +15,18 @@ require(
 function()
 {
   var EASING_FORMULAS = {
-    // t = t, b = x0, c = dx, d = dt
+    //
+    // Sources for the easing equations are:
+    // * http://www.actionscript.org/forums/showthread.php3?s=&threadid=5312
+    // * http://www.robertpenner.com/easing/penner_chapter7_tweening.pdf
+    // * http://gsgd.co.uk/sandbox/jquery/easing/
+    //
+    // The names of variables used in the equations were adjusted as follows:
+    //   t = t
+    //   b = x0
+    //   c = dx
+    //   d = dt
+    //
 
     linear: {
       name: "Linear",
