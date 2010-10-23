@@ -47,7 +47,7 @@ function()
         // Ease-out is the same as ease-in, only flipped and offset
         // Note that a graph of this equation will continue past t = dt
         var tr = t/dt;
-        return x0 - dx*tr*(tr - 2);
+        return x0 - dx*tr*(tr-2);
       }
     },
     easeInOutQuad: {
@@ -56,13 +56,166 @@ function()
         // Ease-in-out is a combination of ease-in for the first half of the duration,
         // and then ease-out for the second half.
         // (This is really kind of cryptic and it'd be nice if I could figure this out...)
-        if (t < dt/2) {
-          var tr = t/dt;
-          return x0 + 2*(dx*tr*tr);
+        var tr2 = t / (dt/2);
+        if (tr2 < 1) {
+          return x0 + dx/2*tr2*tr2;
         } else {
-          var t2 = t - dt/2;
-          var tr2 = t2/dt;
-          return x0 + -2*(dx*tr2*tr2) + 2*(dx*tr2) + dx/2;
+          return x0 - dx/2 * ((tr2-1)*(tr2-2) - 1);
+        }
+      }
+    },
+    easeInCubic: {
+      name: "Ease-in (cubic)",
+      code: function(dx, dt, x0, t) {
+        // Beginning at a position, the change in position beyond that will be equal to
+        // the current time ratio cubed, applied to the final distance the object should
+        // travel. In other words, the position is cubicly proportional to the time.
+        // The effect is that the object starts out moving more slowly than the quadratic
+        // equation, and accelerates faster to reach the final destination in time.
+        var tr = t/dt;
+        return x0 + dx*Math.pow(tr, 3);
+      }
+    },
+    easeOutCubic: {
+      name: "Ease-out (cubic)",
+      code: function(dx, dt, x0, t) {
+        // Ease-out is the same as ease-in, only flipped and massaged.
+        var tr = t/dt;
+        return x0 + dx * (Math.pow(tr-1, 3) + 1);
+      }
+    },
+    easeInOutCubic: {
+      name: "Ease-in-out (cubic)",
+      code: function(dx, dt, x0, t) {
+        // Not really sure what's going on here, either.
+        var tr2 = t / (dt/2);
+        if (tr2 < 1) {
+          return x0 + dx/2 * Math.pow(tr2, 3);
+        } else {
+          return x0 + dx/2 * (Math.pow(tr2-2, 3) + 2);
+        }
+      }
+    },
+    easeInQuartic: {
+      name: "Ease-in (quartic)",
+      code: function(dx, dt, x0, t) {
+        // The change in position is quarticly proportional to the change in time.
+        var tr = t/dt;
+        return x0 + dx * Math.pow(tr, 4);
+      }
+    },
+    easeOutQuartic: {
+      name: "Ease-out (quartic)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + -dx * (Math.pow(tr-1, 4) - 1);
+      }
+    },
+    easeInOutQuartic: {
+      name: "Ease-in-out (quartic)",
+      code: function(dx, dt, x0, t) {
+        var tr2 = t / (dt/2);
+        if (tr2 < 1) {
+          return x0 + dx/2 * Math.pow(tr2, 4);
+        } else {
+          return x0 + -dx/2 * (Math.pow(tr2-2, 4) - 2);
+        }
+      }
+    },
+    easeInQuintic: {
+      name: "Ease-in (quintic)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx * Math.pow(tr, 5);
+      }
+    },
+    easeOutQuintic: {
+      name: "Ease-out (quintic)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx * (Math.pow(tr-1, 5) + 1);
+      }
+    },
+    easeInOutQuartic: {
+      name: "Ease-in-out (quintic)",
+      code: function(dx, dt, x0, t) {
+        var tr2 = t / (dt/2);
+        if (tr2 < 1) {
+          return x0 + dx/2 * Math.pow(tr2, 5);
+        } else {
+          return x0 + dx/2 * (Math.pow(tr2-2, 5) + 2);
+        }
+      }
+    },
+    easeInSine: {
+      name: "Ease-in (sine)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx * (1 - Math.cos(tr * (Math.PI/2)));
+      }
+    },
+    easeOutSine: {
+      name: "Ease-out (sine)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx * Math.sin(tr * (Math.PI/2));
+      }
+    },
+    easeInOutSine: {
+      name: "Ease-in-out (sine)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx/2 * (1 - Math.cos(tr * Math.PI));
+      }
+    },
+    easeInExp: {
+      name: "Ease-in (exponential)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx * Math.pow(2, 10 * (tr - 1));
+      }
+    },
+    easeOutExp: {
+      name: "Ease-out (exponential)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx * (-Math.pow(2, -10 * tr) + 1);
+      }
+    },
+    easeInOutExp: {
+      name: "Ease-in-out (exponential)",
+      code: function(dx, dt, x0, t) {
+        var tr2 = t / (dt/2);
+        if (tr2 < 1) {
+          return x0 + dx/2 * Math.pow(2, 10 * (tr2 - 1));
+        } else {
+          return x0 + dx/2 * (-Math.pow(2, -10 * (tr2 - 1)) + 2);
+        }
+      }
+    },
+    easeInCirc: {
+      name: "Ease-in (circular)",
+      code: function(dx, dt, x0, t) {
+        var tr = t/dt;
+        return x0 + dx * (1 - Math.sqrt(1 - tr*tr));
+      }
+    },
+    easeOutCirc: {
+      name: "Ease-out (circular)",
+      code: function(dx, dt, x0, t) {
+        var tr = (t/dt) - 1;
+        return x0 + dx * Math.sqrt(1 - tr*tr);
+      }
+    },
+    easeInOutCirc: {
+      name: "Ease-in-out (circular)",
+      code: function(dx, dt, x0, t) {
+        var tr2 = t / (dt/2);
+        if (tr2 < 1) {
+          return x0 + dx/2 * (1 - Math.sqrt(1 - tr2*tr2));
+        } else {
+          tr2 -= 2;
+          return x0 + dx/2 * (Math.sqrt(1 - tr2*tr2) + 1);
         }
       }
     }
@@ -104,12 +257,11 @@ function()
         this.options.startPos,
         this.canvas.frameNo
       );
-      if (x < this.options.endPos) {
-        this.pos = x;
-      } else {
+      this.pos = x;
+      this.drawShape();
+      if (x >= this.options.endPos || this.canvas.frameNo >= this.duration) {
         this.canvas.stop();
       }
-      this.drawShape();
     },
     drawShape: function() {
       this.cxt.circle(this.pos, 200, this.radius, {fill: "black"});
