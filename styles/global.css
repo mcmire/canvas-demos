@@ -1,8 +1,18 @@
-#canvas-controls button {
+#canvas-controls, #easing-graph {
+  float: left;
+}
+#easing-graph {
+  margin-left: 30px;
+  border: 1px dotted black;
+}
+
+#canvas-anim-controls button {
   margin-right: 10px;
 }
 
-canvas {
+#canvas {
+  clear: both;
+  display: block;
   border: 1px solid black;
 }
 

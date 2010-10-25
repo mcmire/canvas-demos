@@ -139,7 +139,9 @@ var Canvas = Class.extend({
 
   /****** Private methods ******/
   _addControls: function() {
-    var $div = $('<p id="canvas-controls" />');
+    var $controlsDiv = $('<div id="canvas-controls">');
+
+    var $p = $('<p id="canvas-anim-controls" />');
     var canvas = this;
     var $pauserBtn = $('<button disabled="disabled">Pause</button>');
     var $drawBtn = $('<button>Next frame</button>');
@@ -169,21 +171,24 @@ var Canvas = Class.extend({
       canvas.reset();
       return false;
     });
-    $div.append($starterBtn).append($pauserBtn).append($drawBtn).append($resetBtn);
-    this.$wrapperElement.append($div);
+    $p.append($starterBtn).append($pauserBtn).append($drawBtn).append($resetBtn);
 
+    $controlsDiv.append($p);
+    this.$wrapperElement.append($controlsDiv);
+
+    this.$controlsDiv = $controlsDiv;
     this.$pauserBtn = $pauserBtn;
     this.$drawBtn = $drawBtn;
     this.$starterBtn = $starterBtn;
     this.$resetBtn = $resetBtn;
   },
   _addCanvas: function() {
-    this.$canvasElement = $('<canvas />').attr({ width: this.options.width, height: this.options.height })
+    this.$canvasElement = $('<canvas id="canvas" />').attr({ width: this.options.width, height: this.options.height })
     this.$wrapperElement.append(this.$canvasElement);
   },
   _addDebug: function() {
     this.$debugDiv = $('<p id="canvas-debug">(debug goes here)</p>')
-    this.$wrapperElement.append(this.$debugDiv);
+    this.$controlsDiv.append(this.$debugDiv);
   },
   _drawObjects: function() {
     $.each(this.objects, function(i, obj) {
@@ -192,7 +197,7 @@ var Canvas = Class.extend({
   },
   _addFpsDisplay: function() {
     this.$fpsDiv = $('<p id="canvas-fps">f/s:</p>');
-    this.$wrapperElement.append(this.$fpsDiv);
+    this.$controlsDiv.append(this.$fpsDiv);
   },
   _dumpFps: function() {
     if (!this.frameNo || !this.startTime) return;
@@ -204,7 +209,7 @@ var Canvas = Class.extend({
   },
   _addClock: function() {
     this.$clockDiv = $('<p id="canvas-clock">Time elapsed:</p>');
-    this.$wrapperElement.append(this.$clockDiv);
+    this.$controlsDiv.append(this.$clockDiv);
   },
   _redrawClock: function() {
     var now = new Date();
