@@ -238,32 +238,22 @@ function()
     this.cxt = this.$element[0].getContext("2d");
     this.width = $element.attr("width");
     this.height = $element.attr("height");
-
-    //var $debug = $('<p>');
-    //$('#easing-formula').after($debug);
-    //this.$debug = $debug;
   }
   EasingGraph.prototype.redraw = function() {
     var func = this.canvas.easingFormula.code;
     this.clear();
     this.cxt.beginPath();
     this.cxt.moveTo(0, this.height);
-    //var points = [];
-    var maxT = this.width; //100;
-    var maxX = this.height; // 0;
-    var res = maxT / 25; // 5;
-    //this.$debug.html("");
-    //var div = $('<div>unscaled: </div>');
+    var maxT = this.width;
+    var maxX = this.height;
+    var res = maxT / 25;
     for (var t=0; t<=maxT; t+=res) {
-      var dx = maxX; //1;
-      var dt = maxT; //1;
+      var dx = maxX;
+      var dt = maxT;
       var x0 = 0;
       var x = func(dx, dt, x0, t);
-      //points.push([t, x]);
-      //div.append('(' + t + ', ' + x + ') ');
       this.cxt.lineTo(t, this.height - x);
     }
-    //this.$debug.append(div);
     // don't close path or else the next time the line is drawn
     // the last line drawn will still appear
     //this.cxt.closePath();
@@ -313,7 +303,7 @@ function()
       this.pos = options.startPos;
     },
     redraw: function() {
-      var x = this.canvas.easingFormula.code.call(this,
+      var x = this.canvas.easingFormula.code(
         this.distance,
         this.duration,
         this.options.startPos,
@@ -330,8 +320,19 @@ function()
     }
   });
 
-  var canvas = new EasingCanvas("#wrapper", { width: 800, height: 300, fps: 30, trackFps: true, showClock: true });
-  canvas.addObject(EasingCanvas.Object, { radius: 5, startPos: 200, endPos: 400, duration: 1.5 });
+  var canvas = new EasingCanvas("#wrapper", {
+    width: 800,
+    height: 300,
+    fps: 30,
+    trackFps: true,
+    showClock: true
+  });
+  canvas.addObject(EasingCanvas.Object, {
+    radius: 5,
+    startPos: 200,
+    endPos: 400,
+    duration: 1.5
+  });
 
   // make it global
   window.canvas = canvas;
