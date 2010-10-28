@@ -15,3 +15,12 @@ function NotImplementedError(message) {
 NotImplementedError.prototype.toString = function() {
   return "NotImplementedError: " + this.message;
 }
+
+// Allows you to call a constructor with a variable number of arguments
+Function.prototype.splat = function(args) {
+  var cons = this;
+  return new function() {
+    cons.apply(this, args);
+    this.constructor = cons;
+  };
+}

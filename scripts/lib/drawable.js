@@ -1,7 +1,8 @@
 var Drawable = Class.extend({
-  init: function(canvas) {
-    this.canvas = canvas;
-    this.cxt = canvas.cxt;
+  init: function(parent) {
+    this.parent = parent
+    this.canvas = parent.canvas;
+    this.cxt = parent.canvas.cxt;
     this.drawable = true;
   },
   redraw: function() {

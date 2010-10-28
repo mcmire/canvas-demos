@@ -2,23 +2,13 @@
 <html>
 <head>
   <title>Boids Demo</title>
-  <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script> -->
-  <script src="jquery.min.js"></script>
-  <script src="inheritance.js"></script>
-  <script src="vector.js"></script>
-  <script src="utils.js"></script>
-  <script src="logging.js"></script>
-  <script src="canvas.js"></script>
-  <script src="_collision.js"></script>
-  <script src="boids.js"></script>
-  <link rel="stylesheet" href="boids.css">
+  <link rel="stylesheet" href="styles/global.css">
 </head>
 <body>
-  <p>
-    <a href="#" id="startstop">Start</a> |
-    <a href="#" id="draw">Draw</a>
-  </p>
-  <canvas id="canvas" width="800" height="500"></canvas>
-  <div id="debug"></div>
+  <div id="wrapper"></div>
+  <script src="scripts/vendor/jquery.js"></script>
+  <script src="scripts/vendor/require.js"></script>
+  <script src="scripts/lib/base_deps.js"></script>
+  <script src="scripts/boids.js"></script>
 </body>
 </html>

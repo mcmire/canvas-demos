@@ -1,144 +1,5 @@
-var Canvas = Class.extend({
-  init: function(id, options) {
-    this.$wrapperElement = $(id);
-    this.options = options;
-    if (!this.options.fps) this.options.fps = 30;
-    if (!this.options.width) this.options.width = 800;
-    if (!this.options.height) this.options.height = 500;
-
-    this._addControls();
-    if (this.options.debug) this._addDebug();
-    if (this.options.trackFps) this._addFpsDisplay();
-    if (this.options.showClock) this._addClock();
-    this._addCanvas();
-
-    this.cxt = this.$canvasElement[0].getContext("2d");
-    $.extend(this.cxt, Canvas.CanvasContextHelpers);
-    this.mspf = 1000 / this.options.fps;
-
-    this.frameNo = 0;
-    this.state = "stopped";
-    this.objects = [];
-  },
-  addObject: function(klass, opts) {
-    var obj = new klass(this, opts);
-    this.objects.push(obj);
-  },
-  drawOne: function() {
-    this.clear();
-    this._drawObjects();
-    this.frameNo++;
-  },
-  redraw: function() {
-    if (this.options.trackFps) this._dumpFps();
-    if (this.options.showClock) this._redrawClock();
-    this.drawOne();
-  },
-  start: function() {
-    this.reset();
-    this.clearTimer();
-    this.revive();
-    this.$starterBtn.text("Stop");
-    this.$pauserBtn.attr("disabled", false);
-    this.$drawBtn.attr("disabled", true);
-  },
-  kill: function() {
-    this.clearTimer();
-    this.startTime = null;
-    this.state = "stopped";
-  },
-  stop: function() {
-    this.kill();
-    this.$starterBtn.text("Start");
-    this.$pauserBtn.attr("disabled", true);
-    this.$drawBtn.attr("disabled", false);
-  },
-  clearTimer: function() {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = null;
-  },
-  pause: function() {
-    this.clearTimer();
-    this.state = "paused";
-    this.$pauserBtn.text("Resume");
-    this.$starterBtn.text("Start");
-  },
-  startTimer: function() {
-    // TODO: This should subtract time paused or something...
-    this.startTime = new Date();
-    this.redraw();
-    this.timer = setInterval($.proxy(this, 'redraw'), this.mspf);
-  },
-  revive: function() {
-    this.startTimer();
-    this.state = "running";
-  },
-  resume: function() {
-    this.revive();
-    this.$pauserBtn.text("Pause");
-    this.$starterBtn.text("Stop");
-  },
-  reset: function() {
-    this.frameNo = 0;
-    this.kill();
-    this.clear();
-  },
-  clear: function() {
-    this.cxt.clearRect(0, 0, this.options.width, this.options.height);
-    //this.options.width = this.options.width;
-    //log("Clearing the canvas, width is " + this.options.width + ", height is " + this.options.height);
-    if (this.options.debug) this._clearDebug();
-  },
-
-  bounds: function(miter) {
-    var miter = miter || 0;
-    return [
-      [0 + miter, this.options.width - miter],
-      [0 + miter, this.options.height - miter]
-    ]
-  },
-  randomPos: function(bx, by) {
-    var bx, by;
-    switch(arguments.length) {
-      case 2:
-        bx = arguments[0];
-        by = arguments[1];
-        break;
-      case 1:
-        bx = by = arguments[0];
-        break;
-      case 0:
-        bx = by = 0;
-        break;
-    }
-    return [
-      Math.rand(this.options.width - bx),
-      Math.rand(this.options.height - by)
-    ];
-  },
-  randomVel: function(speed) {
-    var speed = speed || 10;
-    return [
-      Math.rand(-speed, speed),
-      Math.rand(-speed, speed)
-    ];
-  },
-  center: function() {
-    return [
-      this.options.width / 2,
-      this.options.height / 2
-    ]
-  },
-
-  _clearDebug: function() {
-    this.$debugDiv.html("");
-  },
-  debug: function(msg) {
-    if (this.debug) this.$debugDiv.append("<p>"+msg+"</p>");
-  },
-
-  /****** Private methods ******/
-  _addControls: function() {
+var Canvas = Class.extend((function() {
+  function addControls() {
     var $controlsDiv = $('<div id="canvas-controls">');
 
     var $p = $('<p id="canvas-anim-controls" />');
@@ -181,42 +42,174 @@ var Canvas = Class.extend({
     this.$drawBtn = $drawBtn;
     this.$starterBtn = $starterBtn;
     this.$resetBtn = $resetBtn;
-  },
-  _addCanvas: function() {
+  }
+  function addCanvas() {
     this.$canvasElement = $('<canvas id="canvas" />').attr({ width: this.options.width, height: this.options.height })
     this.$wrapperElement.append(this.$canvasElement);
-  },
-  _addDebug: function() {
+  }
+  function addDebug() {
     this.$debugDiv = $('<p id="canvas-debug">(debug goes here)</p>')
     this.$controlsDiv.append(this.$debugDiv);
-  },
-  _drawObjects: function() {
-    $.each(this.objects, function(i, obj) {
-      if (obj.drawable) obj.redraw();
-    });
-  },
-  _addFpsDisplay: function() {
+  }
+  function drawObjects() {
+    var objects = _.select(this.objects, function(obj) { return obj.drawable });
+    // Honestly, we're splitting these into two steps just for the boids simulation,
+    // but it could be useful for other stuff too(?)
+    $.each(objects, function(i, obj) { obj.aim() });
+    $.each(objects, function(i, obj) { obj.move(); obj.draw() });
+  }
+  function addFpsDisplay() {
     this.$fpsDiv = $('<p id="canvas-fps">f/s:</p>');
     this.$controlsDiv.append(this.$fpsDiv);
-  },
-  _dumpFps: function() {
+  }
+  function dumpFps() {
     if (!this.frameNo || !this.startTime) return;
     var now = new Date();
     var timeElapsed = (now - this.startTime) / 1000;
     var fps = this.frameNo / timeElapsed;
     var mspf = 1000 / fps;
     this.$fpsDiv.html("f/s: " + fps + "<br />ms/f: " + mspf);
-  },
-  _addClock: function() {
+  }
+  function addClock() {
     this.$clockDiv = $('<p id="canvas-clock">Time elapsed:</p>');
     this.$controlsDiv.append(this.$clockDiv);
-  },
-  _redrawClock: function() {
+  }
+  function redrawClock() {
     var now = new Date();
     var diff = (now - this.startTime) / 1000;
     this.$clockDiv.html("Time elapsed: " + diff + " s");
   }
-})
+  
+  return {
+    init: function(id, options) {
+      this.$wrapperElement = $(id);
+      this.options = options;
+      if (!this.options.fps) this.options.fps = 30;
+      if (!this.options.width) this.options.width = 800;
+      if (!this.options.height) this.options.height = 500;
+
+      this._(addControls)();
+      if (this.options.debug) this._(addDebug)();
+      if (this.options.trackFps) this._(addFpsDisplay)();
+      if (this.options.showClock) this._(addClock)();
+      this._(addCanvas)();
+
+      this.cxt = this.$canvasElement[0].getContext("2d");
+      $.extend(this.cxt, Canvas.CanvasContextHelpers);
+      this.mspf = 1000 / this.options.fps;
+
+      this.frameNo = 0;
+      this.state = "stopped";
+      this.objects = new DrawableCollection(this);
+    },
+    
+    drawOne: function() {
+      this.clear();
+      this._(drawObjects)();
+      this.frameNo++;
+    },
+    redraw: function() {
+      if (this.options.trackFps) this._(dumpFps)();
+      if (this.options.showClock) this._(redrawClock)();
+      this.drawOne();
+    },
+    start: function() {
+      this.reset();
+      this.clearTimer();
+      this.revive();
+      this.$starterBtn.text("Stop");
+      this.$pauserBtn.attr("disabled", false);
+      this.$drawBtn.attr("disabled", true);
+    },
+    kill: function() {
+      this.clearTimer();
+      this.startTime = null;
+      this.state = "stopped";
+    },
+    stop: function() {
+      this.kill();
+      this.$starterBtn.text("Start");
+      this.$pauserBtn.attr("disabled", true);
+      this.$drawBtn.attr("disabled", false);
+    },
+    clearTimer: function() {
+      if (this.timer) clearInterval(this.timer);
+      this.timer = null;
+    },
+    pause: function() {
+      this.clearTimer();
+      this.state = "paused";
+      this.$pauserBtn.text("Resume");
+      this.$starterBtn.text("Start");
+    },
+    startTimer: function() {
+      // TODO: This should subtract time paused or something...
+      this.startTime = new Date();
+      this.redraw();
+      this.timer = setInterval($.proxy(this, 'redraw'), this.mspf);
+    },
+    revive: function() {
+      this.startTimer();
+      this.state = "running";
+    },
+    resume: function() {
+      this.revive();
+      this.$pauserBtn.text("Pause");
+      this.$starterBtn.text("Stop");
+    },
+    reset: function() {
+      this.frameNo = 0;
+      this.kill();
+      this.clear();
+    },
+    clear: function() {
+      this.cxt.clearRect(0, 0, this.options.width, this.options.height);
+      //this.options.width = this.options.width;
+      //log("Clearing the canvas, width is " + this.options.width + ", height is " + this.options.height);
+      if (this.options.debug) this._clearDebug();
+    },
+
+    bounds: function(miter) {
+      var miter = miter || 0;
+      return [
+        [0 + miter, this.options.width - miter],
+        [0 + miter, this.options.height - miter]
+      ]
+    },
+    randomPos: function(bx, by) {
+      var bx, by;
+      switch(arguments.length) {
+        case 2:
+          bx = arguments[0];
+          by = arguments[1];
+          break;
+        case 1:
+          bx = by = arguments[0];
+          break;
+        case 0:
+          bx = by = 0;
+          break;
+      }
+      return [
+        Math.rand(this.options.width - bx),
+        Math.rand(this.options.height - by)
+      ];
+    },
+    center: function() {
+      return [
+        this.options.width / 2,
+        this.options.height / 2
+      ]
+    },
+
+    _clearDebug: function() {
+      this.$debugDiv.html("");
+    },
+    debug: function(msg) {
+      if (this.debug) this.$debugDiv.append("<p>"+msg+"</p>");
+    }
+  }
+})());
 
 Canvas.CanvasContextHelpers = {
   line: function(x1, y1, x2, y2, options) {
@@ -233,10 +226,12 @@ Canvas.CanvasContextHelpers = {
   },
   // This creates a triangle that points to the right.
   // TODO: Update these to add beginPath() / closePath()
-  triangle: function(x, y, w, h) {
-    this.moveTo(x - (w / 2), y - (h / 2));
-    this.lineTo(x - (w / 2), y + (h / 2));
-    this.lineTo(x + (w / 2), y                );
+  triangle: function(x, y, w, h, options) {
+    this.createShape(options, function() {
+      this.moveTo(x - (w / 2), y - (h / 2));
+      this.lineTo(x - (w / 2), y + (h / 2));
+      this.lineTo(x + (w / 2), y          );
+    })
   },
   arrow: function(p1, p2) {
     var dy = p2[1] - p1[1];

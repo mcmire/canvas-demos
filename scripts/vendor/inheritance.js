@@ -9,8 +9,20 @@
   this.Class = function(){};
   
   // Create a new Class that inherits from this class
-  Class.extend = function(prop) {
+  // PATCH: Add classMethods
+  Class.extend = function(prop, classMethods) {
     var _super = this.prototype;
+    
+    // The dummy class constructor
+    function Class() {
+      // All construction is actually done in the init method
+      if ( !initializing && this.init )
+        this.init.apply(this, arguments);
+    }
+    // PATCH: Add classMethods
+    if (classMethods) {
+      for (var name in classMethods) Class[name] = classMethods[name];
+    }
     
     // Instantiate a base class (but only create the instance,
     // don't run the init constructor)
@@ -21,9 +33,12 @@
     // Copy the properties over onto the new prototype
     for (var name in prop) {
       // Check if we're overwriting an existing function
-      prototype[name] = typeof prop[name] == "function" && 
-        typeof _super[name] == "function" && fnTest.test(prop[name]) ?
-        (function(name, fn){
+      if (
+        (typeof prop[name] == "function") && 
+        (typeof _super[name] == "function") &&
+        fnTest.test(prop[name])
+      ) {
+        prototype[name] = (function(name, fn){
           return function() {
             var tmp = this._super;
             
@@ -38,22 +53,27 @@
             
             return ret;
           };
-        })(name, prop[name]) :
-        prop[name];
+        })(name, prop[name]);
+      }
+      else {
+        prototype[name] = prop[name];
+      }
     }
-    
-    // The dummy class constructor
-    function Class() {
-      // All construction is actually done in the init method
-      if ( !initializing && this.init )
-        this.init.apply(this, arguments);
+    // PATCH: Add a way to access private members
+    // http://webreflection.blogspot.com/2008/04/natural-javascript-private-methods.html
+    prototype._ = function(callback) {
+      var self = this;
+      return function() {
+        return callback.apply(self, arguments);
+      };
     }
     
     // Populate our constructed prototype object
     Class.prototype = prototype;
     
     // Enforce the constructor to be what we expect
-    Class.constructor = Class;
+    // PATCH: Class.constructor -> prototype.constructor
+    prototype.constructor = Class;
 
     // And make this class extendable
     Class.extend = arguments.callee;
