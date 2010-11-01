@@ -19,6 +19,7 @@
           var klass = arguments[0], args = arguments[1];
           // Ensure the drawable's parent is the collection
           args = [this].concat(args);
+          // BUG: I don't think we can do this....
           obj = new klass.splat(args);
         } else {
           obj = arguments[0];

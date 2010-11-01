@@ -3,6 +3,7 @@ var require = (function(require) {
 */
   var baseDeps = [
     "order!scripts/vendor/underscore.min.js",
+    "order!scripts/lib/underscore_patches.js",
     "order!scripts/vendor/inheritance.js",
     "order!scripts/lib/utils.js",
     "order!scripts/lib/logging.js",
