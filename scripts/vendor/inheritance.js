@@ -15,10 +15,7 @@
   this.Class = function(){};
   
   function initArray() {
-    // Accept an array or a list of values as the arguments
-    var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
     var arr = [ ];
-    arr.push.apply(arr, args);
     // This doesn't work in IE < 8 but I don't really care
     // Note that "this" refers to the prototype object defined below
     arr.__proto__ = this;
@@ -38,14 +35,25 @@
     var _super = this.prototype;
     var prototype;
     
+    var subclassingArray = (this === Array);
+    
     // The dummy class constructor
     function Class() {
       if (initializing) return;
       if (this.init) {
-        // All construction is actually done in the init method
-        var ret = this.init.apply(this, arguments);
         // PATCH: Special logic for a subclass of Array
-        if (superclass === Array) return ret;
+        if (subclassingArray) {
+          // Set the context for all future interaction with the object we are building,
+          // which is an array instead of a direct instance of the class we have just created
+          // (its prototype is the prototype we built when building the class, though, so it works out).
+          var ret = initArray.call(this);
+          // All construction is actually done in the init method
+          this.init.apply(ret, arguments);
+          return ret;
+        } else {
+          // All construction is actually done in the init method
+          this.init.apply(this, arguments);
+        }
       }
     }
     // PATCH: Add classProperties
@@ -72,21 +80,39 @@
     // Copy the properties over onto the new prototype
     for (var name in instanceProperties) {
       // Check if we're overwriting an existing function
+      // Note that for Array, we will be overriding the 'init' function which is defined at the bottom
       if (
         (typeof instanceProperties[name] == "function") && 
         (typeof _super[name] == "function") &&
         fnTest.test(instanceProperties[name])
       ) {
-        // Wrap the method with a function that sets _super(), runs the method, and unsets _super()
+        //
+        // Wrap the method with a function that sets _super(), runs the method, and unsets _super().
+        //
+        // In effect, if we have something like this:
+        //
+        //   Subclass = Superclass.extend({
+        //     zing: function(foo, bar) {
+        //       this._super(foo);
+        //       this.bar = bar;
+        //     }
+        //   })
+        //
+        // it will turn into this...
+        //
+        //   Subclass.prototype.zing = function(foo, bar) {
+        //     var tmp = this._super;
+        //     this._super = Superclass.prototype.zing;
+        //     this.bar = bar;
+        //     this._super = tmp;
+        //   }
+        //
         prototype[name] = (function(name, fn) {
           return function() {
             var tmp = this._super;
-            // Add a new ._super() method that is the same method
-            // but on the super-class
+            // Remember that _super here refers to the class being extended's prototype
             this._super = _super[name];
             var ret = fn.apply(this, arguments);
-            // The method only need to be bound temporarily, so we
-            // remove it when we're done executing
             this._super = tmp;
             return ret;
           };
@@ -99,30 +125,52 @@
     
     // PATCH: Add special logic for extending an array
     // http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
+    /*
     if (this === Array) {
       if (prototype.init) {
+        //
+        // Wrap the 'init' function as defined on the prototype above
+        // in another function that initializes an array and uses that 
+        // as the context for the above 'init' function.
+        //
+        // In effect, if we have something that looks like this...
+        //
+        //   ArraySubclass = Array.extend({
+        //     init: function(foo, args) {
+        //       this._super(args);
+        //       this.foo = foo;
+        //     }
+        //   })
+        //
+        // it will turn into this...
+        //
+        //   function ArraySubclass() {
+        //     arr = initArray.call(this);
+        //     arr = Array.prototype.init.apply(arr, arguments);
+        //     arr.foo = foo;
+        //     return arr;
+        //   }
+        //
         prototype.init = (function(fn) {
-          return function() {            
-            var tmp = this._super;
-            // Add a new ._super() method that is the same method
-            // but on the super-class
-            this._super = _super[name];
-            var arr = fn.apply(this, arguments);
-            // The method only need to be bound temporarily, so we
-            // remove it when we're done executing
-            this._super = tmp;
-            return initArray.apply(this, arr);
-            
-            // var arr = initArray.apply(prototype, arguments);
-            // this._super = _super[name];
-            // fn.apply(arr, arguments);
-            // return arr;
+          return function() {
+            //var arr = initArray.call(this);
+            fn.apply(this, arguments);
+            return this;
           }
         })(prototype.init);
       } else {
-        prototype.init = initArray;
+    */
+      if (subclassingArray && !prototype.init) {
+        prototype.init = function() {
+          //var arr = initArray.call(this);
+          Array.prototype.init.apply(this, arguments);
+          return this;
+        }
+      }
+    /*
       }
     }
+    */
     
     // PATCH: Add a way to access private members
     // http://webreflection.blogspot.com/2008/04/natural-javascript-private-methods.html
@@ -149,3 +197,9 @@
 
 // PATCH: Make it possible to extend an Array too
 Array.extend = Class.extend;
+Array.prototype.init = function() {
+  // Accept an array or a list of values as the arguments
+  var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
+  this.push.apply(this, args);
+  return this;
+}
