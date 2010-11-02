@@ -14,6 +14,17 @@
   // The base Class implementation (does nothing)
   this.Class = function(){};
   
+  function initArray() {
+    // Accept an array or a list of values as the arguments
+    var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
+    var arr = [ ];
+    arr.push.apply(arr, args);
+    // This doesn't work in IE < 8 but I don't really care
+    // Note that "this" refers to the prototype object defined below
+    arr.__proto__ = this;
+    return arr;
+  }
+  
   // Create a new Class that inherits from this class
   Class.extend = function(/*[mixins, ]instanceProperties[, classProperties]*/) {
     var mixins, instanceProperties, classProperties;
@@ -26,16 +37,6 @@
     var superclass = this;
     var _super = this.prototype;
     var prototype;
-    
-    function initArray() {
-      // Accept an array or a list of values as the arguments
-      var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
-      var arr = [ ];
-      arr.push.apply(arr, args);
-      // Note that this doesn't work in IE < 8 but I don't really care
-      arr.__proto__ = prototype;
-      return arr;
-    }
     
     // The dummy class constructor
     function Class() {
@@ -101,18 +102,21 @@
     if (this === Array) {
       if (prototype.init) {
         prototype.init = (function(fn) {
-          return function() {
-            var context = this;
-            context = initArray.apply(this, arguments);
-            var tmp = context._super;
+          return function() {            
+            var tmp = this._super;
             // Add a new ._super() method that is the same method
             // but on the super-class
-            context._super = _super[name];
-            fn.apply(context, arguments);
+            this._super = _super[name];
+            var arr = fn.apply(this, arguments);
             // The method only need to be bound temporarily, so we
             // remove it when we're done executing
-            context._super = tmp;
-            return context;
+            this._super = tmp;
+            return initArray.apply(this, arr);
+            
+            // var arr = initArray.apply(prototype, arguments);
+            // this._super = _super[name];
+            // fn.apply(arr, arguments);
+            // return arr;
           }
         })(prototype.init);
       } else {
