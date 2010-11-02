@@ -16,19 +16,27 @@ NotImplementedError.prototype.toString = function() {
   return "NotImplementedError: " + this.message;
 }
 
-/*
-// http://javascriptweblog.wordpress.com/2010/04/05/curry-cooking-up-tastier-functions/
-Function.prototype.curry = function() {
-  if (arguments.length == 0) return this;
-  var original = this;
-  var args = $.makeArray(arguments);
-  return function() {
-    // Call the function we are currying with the arguments given to the curry function
-    // plus the ones that will be given to this new function (in the future).
-    return original.apply(this, args.concat($.makeArray(arguments)));
-  }
+// Allows you to call a constructor with a variable number of arguments
+// http://stackoverflow.com/questions/1959247/javascript-apply-on-constructor-throwing-malformed-formal-parameter
+Function.splat = function(cons, args) {
+  var func = function() { cons.apply(this, arguments[0]) };
+  func.prototype = cons.prototype;
+  return new func(args);
 }
 
-// Make it so we can create a subclass of Array
-Array.extend = Class.extend;
+/*
+// http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
+// Note that this doesn't work in IE < 8 but I don't really care
+Array.subclass = function() {
+  var func = function() {
+    // Accept an array or a list of values as the arguments
+    var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
+    var arr = [ ];
+    arr.push.apply(arr, args);
+    arr.__proto__ = arguments.callee.prototype;
+    return arr;
+  }
+  func.prototype = new Array;
+  return func;
+}
 */

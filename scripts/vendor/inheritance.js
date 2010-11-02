@@ -3,62 +3,123 @@
  * MIT Licensed.
  */
 // Inspired by base2 and Prototype
+//
+// CHANGES FROM THE ORIGINAL:
+// - Add classProperties
+// - Add special logic for extending an array
+// - Add a sort of multiple inheritance
+//
 (function(){
   var initializing = false, fnTest = /xyz/.test(function(){xyz;}) ? /\b_super\b/ : /.*/;
   // The base Class implementation (does nothing)
   this.Class = function(){};
   
   // Create a new Class that inherits from this class
-  // PATCH: Add classMethods
-  Class.extend = function(prop, classMethods) {
+  Class.extend = function(/*[mixins, ]instanceProperties[, classProperties]*/) {
+    var mixins, instanceProperties, classProperties;
+    if (arguments.length == 3) {
+      mixins = arguments[0], instanceProperties = arguments[1], classProperties = arguments[2];
+    } else {
+      instanceProperties = arguments[0], classProperties = arguments[1];
+    }
+    
+    var superclass = this;
     var _super = this.prototype;
+    var prototype;
+    
+    function initArray() {
+      // Accept an array or a list of values as the arguments
+      var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
+      var arr = [ ];
+      arr.push.apply(arr, args);
+      // Note that this doesn't work in IE < 8 but I don't really care
+      arr.__proto__ = prototype;
+      return arr;
+    }
     
     // The dummy class constructor
     function Class() {
-      // All construction is actually done in the init method
-      if ( !initializing && this.init )
-        this.init.apply(this, arguments);
+      if (initializing) return;
+      if (this.init) {
+        // All construction is actually done in the init method
+        var ret = this.init.apply(this, arguments);
+        // PATCH: Special logic for a subclass of Array
+        if (superclass === Array) return ret;
+      }
     }
-    // PATCH: Add classMethods
-    if (classMethods) {
-      for (var name in classMethods) Class[name] = classMethods[name];
+    // PATCH: Add classProperties
+    if (classProperties) {
+      for (var name in classProperties) Class[name] = classProperties[name];
     }
     
     // Instantiate a base class (but only create the instance,
     // don't run the init constructor)
     initializing = true;
-    var prototype = new this();
+    prototype = new this();
     initializing = false;
     
+    // PATCH: Copy the prototypes of the given mixins onto the new prototype
+    // Note that "instanceof" will always point to the main subclass, never any mixins
+    // Also, there isn't a way to access any of these mixins via _super, you'll have to do that yourself.
+    for (var i=0; i<mixins; i++) {
+      var mixin = mixins[i];
+      for (var name in mixin.prototype) {
+        prototype[name] = mixin.prototype[name]
+      }
+    }
+    
     // Copy the properties over onto the new prototype
-    for (var name in prop) {
+    for (var name in instanceProperties) {
       // Check if we're overwriting an existing function
       if (
-        (typeof prop[name] == "function") && 
+        (typeof instanceProperties[name] == "function") && 
         (typeof _super[name] == "function") &&
-        fnTest.test(prop[name])
+        fnTest.test(instanceProperties[name])
       ) {
-        prototype[name] = (function(name, fn){
+        // Wrap the method with a function that sets _super(), runs the method, and unsets _super()
+        prototype[name] = (function(name, fn) {
           return function() {
             var tmp = this._super;
-            
             // Add a new ._super() method that is the same method
             // but on the super-class
             this._super = _super[name];
-            
+            var ret = fn.apply(this, arguments);
             // The method only need to be bound temporarily, so we
             // remove it when we're done executing
-            var ret = fn.apply(this, arguments);        
             this._super = tmp;
-            
             return ret;
           };
-        })(name, prop[name]);
+        })(name, instanceProperties[name]);
       }
       else {
-        prototype[name] = prop[name];
+        prototype[name] = instanceProperties[name];
       }
     }
+    
+    // PATCH: Add special logic for extending an array
+    // http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
+    if (this === Array) {
+      if (prototype.init) {
+        prototype.init = (function(fn) {
+          return function() {
+            var context = this;
+            context = initArray.apply(this, arguments);
+            var tmp = context._super;
+            // Add a new ._super() method that is the same method
+            // but on the super-class
+            context._super = _super[name];
+            fn.apply(context, arguments);
+            // The method only need to be bound temporarily, so we
+            // remove it when we're done executing
+            context._super = tmp;
+            return context;
+          }
+        })(prototype.init);
+      } else {
+        prototype.init = initArray;
+      }
+    }
+    
     // PATCH: Add a way to access private members
     // http://webreflection.blogspot.com/2008/04/natural-javascript-private-methods.html
     prototype._ = function(callback) {
@@ -81,3 +142,6 @@
     return Class;
   };
 })();
+
+// PATCH: Make it possible to extend an Array too
+Array.extend = Class.extend;
