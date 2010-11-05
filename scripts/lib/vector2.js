@@ -1,15 +1,5 @@
 var Vector = (function() {
-  // http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
-  // Note that this doesn't work in IE < 8 but I don't really care
-  function Vector() {
-    // Accept an array or a list of values as the arguments
-    var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
-    var arr = [ ];
-    arr.push.apply(arr, args);
-    arr.__proto__ = Vector.prototype;
-    return arr;
-  }
-  Vector.prototype = new Array;
+  var Vector = Array.extend({});
   
   function coerce(v, n) {
     if ($.isArray(v)) {

@@ -2,12 +2,13 @@
 var require = (function(require) {
 */
   var baseDeps = [
-    "order!scripts/vendor/underscore.min.js",
+    "order!scripts/vendor/underscore.js",
     "order!scripts/lib/underscore_patches.js",
     "order!scripts/vendor/inheritance.js",
     "order!scripts/lib/utils.js",
     "order!scripts/lib/logging.js",
-    "order!scripts/lib/vector.js",
+    "order!scripts/lib/vector2.js",
+    "order!scripts/lib/drawable.js",
     "order!scripts/lib/drawable_collection.js",
     "order!scripts/lib/canvas.js"
   ];

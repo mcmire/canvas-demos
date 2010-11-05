@@ -51,7 +51,7 @@ var Collision = {
     };
 
     $.each(args.objectClasses, function(i, klass) {
-      klass.prototype.aim = (function(_super) {
+      klass.prototype.setVel = (function(_super) {
         return function() {
           _super.apply(this, arguments);
           var vectors = this.canvas.collision(this);
@@ -59,7 +59,7 @@ var Collision = {
           //this.pos = vectors[0];
           //this.alreadyMoved = true;
         }
-      })(klass.prototype.aim);
+      })(klass.prototype.setVel);
 
       klass.prototype.bounds = function(pos) { // x1, x2, y1, y2
         var pos = pos || this.pos;

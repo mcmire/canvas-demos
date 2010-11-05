@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test 2</title>
+</head>
+<body>
+  <p>Nothing here, just loading some Javascript files.</p>
+  
+  <div id="whatever" style="height: 300px; width: 300px; border: 1px solid black"></div>
+  
+  <script src="scripts/vendor/jquery.js"></script>
+  
+  <script>
+  var div = $('<div>').css({width: 400, height: 400, border: "1px solid red"})
+  $(document.body).append(div);
+  
+  var div2 = $('#whatever');
+  $(document.body).append(div2);
+  
+  </script>
+</body>
+</html>

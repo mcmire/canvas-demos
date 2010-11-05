@@ -1,17 +1,23 @@
 describe("Vector", function() {
+  // TODO: Add other tests for operators where none of the arguments are Vectors
+  
   $.each(["add", "plus"], function(i, method) {
-    var args = [ (new Vector(1, 2)), [3, 4], [5, 6] ]
-    var expected = new Vector(9, 12);
     describe("."+method, function() {
       it("returns the addition of the given vectors as a new vector", function() {
-        var actual = Vector[method].apply(Vector, args);
+        var actual = Vector[method]( (new Vector(1, 2)), [3, 4], [5, 6] );
+        var expected = new Vector(9, 12);
+        expect(actual).toEqual(expected);
+      })
+      it("also works if none of the arguments are Vectors", function() {
+        var actual = Vector[method]( [1, 2], [3, 4], [5, 6] );
+        var expected = new Vector(9, 12);
         expect(actual).toEqual(expected);
       })
     })
     describe("#"+method, function() {
       it("returns the addition of me and the given vectors as a new vector", function() {
-        var first = args[0];
-        var actual = first[method].apply(first, args.slice(1));
+        var actual = (new Vector(1, 2))[method]( [3, 4], [5, 6] );
+        var expected = new Vector(9, 12);
         expect(actual).toEqual(expected);
       })
     })

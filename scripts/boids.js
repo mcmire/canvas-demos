@@ -1,16 +1,19 @@
 (function() {
   var init = function() {
-    var BoidsCanvas = Canvas.extend({});
     
-    return;
+    var BoidsCanvas = Canvas.extend();
     
     var Boid = Shape.extend({
       setOptions: function(options) {
         this._super(options);
-        this.width = options.width;
-        this.height = options.height;
         this.index = options.index;
       },
+      //defaultPosition: function() {
+      //  return new Vector(100, 100);
+      //},
+      //defaultVelocity: function() {
+      //  return new Vector(2, 2);
+      //},
       width: function() {
         return this.options.width;
       },
@@ -18,26 +21,47 @@
         return this.options.height;
       },
       setAcc: function() {
-        var acc = this.boidColl.applyRules(this);
-        this.acc = Vector.add(this.acc, acc);
+        // do nothing for right now
+      },
+      setVel: function() {
+        var vel = this.parent.applyRules(this);
+        this.vel = Vector.add(this.vel, vel);
         //this.vel = Vector.limit(this.vel, [Boid.maxSpeed, Boid.maxSpeed]);
       },
       drawShape: function() {
         var color = (this.index == 0) ? "red" : "black";
-        this.cxt.triangle(0, 0, this.width, this.height, {fill: color});
+        this.cxt.triangle(this.pos[0], this.pos[1], this.width(), this.height(), {
+          rotate: this.vel.angle(),
+          fill: color
+        });
       }
     },
     {
       maxSpeed: 5
     })
-    
-    var BoidCollection = DrawableCollection.create({
+
+    Collision.mixin({
+      canvasClass: BoidsCanvas,
+      objectClasses: [Boid]
+    })
+
+    var canvas = window.canvas = new BoidsCanvas("#wrapper", {
+      width: 800,
+      height: 600,
+      fps: 30//,
+      //trackFps: true,
+      //showClock: true
+    });
+    canvas.objects.addMany(60, Boid, function(i) { return {width: 8, height: 6, index: i} });
+    $.extend(canvas.objects, {
+      sepDistLimit: 50,
+      sepVelLimit: 5,
       redraw: function() {
         // In real life, all boids make a decision on where they'll move next *at the same time*
         // This fixes the case where the distance between boid A and B is not the same as
         // the distance between B and A when in fact their distances *are* the same
-        $.each(this.drawables, function(i, boid) { boid.aim() })
-        $.each(this.drawables, function(i, boid) { boid.draw() })
+        $.each(this, function(i, boid) { boid.setVel() })
+        $.each(this, function(i, boid) { boid.setPos(); boid.drawShape() })
       },
       applyRules: function(boid) {
         var cohesionVel = this.cohesionRule(boid);
@@ -47,9 +71,9 @@
         var alignmentVel = this.alignmentRule(boid);
         //debug("alignmentVel: " + alignmentVel);
         return Vector.add(
-          //cohesionVel,
-          separationVel//,
-          //alignmentVel
+          cohesionVel,
+          separationVel,
+          alignmentVel
         );
       },
       //
@@ -60,9 +84,9 @@
       // can't see itself).
       //
       cohesionRule: function(boid) {
-        var sum = [0, 0];
+        var sum = new Vector(0, 0);
         var j = 0;
-        $.each(this.drawables, function(i, b) {
+        $.each(this, function(i, b) {
           if (b == boid) return;
           sum = Vector.add(sum, b.pos);
           j++;
@@ -86,10 +110,10 @@
       // disallowed range, both will back away from each other.
       //
       separationRule: function(boid) {
-        var vector = [0, 0];
-        var kr = BoidCollection.sepDistLimit;
-        var kv = BoidCollection.sepVelLimit;
-        $.each(this.drawables, function(i, b) {
+        var vector = new Vector(0, 0);
+        var kr = this.sepDistLimit;
+        var kv = this.sepVelLimit;
+        $.each(this, function(i, b) {
           if (b == boid) return;
           // Distance here is a scalar, the length of the line from me to you
           var r1 = Vector.distance(b.pos, boid.pos);
@@ -106,7 +130,6 @@
             vector = Vector.subtract(vector, v);
           }
         });
-        if (Vector.gt(0)) boid.oldVel = boid.vel;
         return vector;
       },
       //
@@ -117,9 +140,9 @@
       // small portion to the boid's current velocity.
       //
       alignmentRule: function(boid) {
-        var sum = [0, 0];
+        var sum = new Vector(0, 0);
         var j = 0;
-        $.each(this.drawables, function(i, b) {
+        $.each(this, function(i, b) {
           if (b == boid) return;
           sum = Vector.add(sum, b.vel);
           j++;
@@ -132,28 +155,8 @@
         var vector = Vector.divide(diff, 8);
         return vector;
       }
-    },
-    {
-      sepDistLimit: 50,
-      sepVelLimit: 5
     })
-
-    Collision.mixin({
-      canvasClass: BoidsCanvas,
-      objectClasses: [Boid]
-    })
-
-    var canvas = new BoidsCanvas("#wrapper", {
-      width: 800,
-      height: 300,
-      fps: 30,
-      trackFps: true,
-      showClock: true
-    });
-    var boidColl = canvas.objects.create(BoidCollection);
-    boidColl.addMany(200, Boid, function(i) { return {width: 5, height: 8, index: i} });
     
-    window.BoidsCanvas = BoidsCanvas;
   }; // end init
 
   // Require dependencies, load the real code

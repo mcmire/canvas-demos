@@ -1,38 +1,32 @@
-(function() {
-  var init = function() {
-    window.DrawableCollection = Drawable.extend({
-      init: function(canvas, number, klass, args) {
-        this._super(canvas);
-        this.drawables = [];
-        if (arguments.length == 4) this.addMany(number, klass, args);
-      },
-      addMany: function(number, klass, args) {
-        var isFunc = (typeof args == "function");
-        for (var i=0; i<number; i++) {
-          var fargs = isFunc ? args(i) : args;
-          this.add(klass, fargs);
-        }
-      },
-      create: function(klass, args) {
-        var obj;
-        if (arguments.length == 2) {
-          var klass = arguments[0], args = arguments[1];
-          // Ensure the drawable's parent is the collection
-          args = [this].concat(args);
-          // BUG: I don't think we can do this....
-          obj = new klass.splat(args);
-        } else {
-          obj = arguments[0];
-        }
-        this.drawables.push(obj);
-        return obj;
-      },
-      // Like create, but it doesn't return the object created
-      add: function() {
-        this.create.apply(this, arguments);
-        return this;
-      }
-    })
+var DrawableCollection = Array.extend([Drawable], {
+  init: function(canvas, number, klass, args) {
+    this._super(args || []);
+    Drawable.prototype.init.call(this, canvas);
+    if (arguments.length == 4) this.addMany(number, klass, args);
+    return args;
+  },
+  redraw: function() {
+    _(this).chain().
+      select(function(obj) { return obj.drawable }).
+      each(function(obj) { obj.redraw() });
+  },
+  add: function() {
+    this.create.apply(this, arguments);
+    return this;
+  },
+  addMany: function(number, klass, args) {
+    var isFunc = $.isFunction(args);
+    for (var i=0; i<number; i++) {
+      var fargs = isFunc ? args(i) : args;
+      this.add(klass, fargs);
+    }
+  },
+  // Like add, but returns the object added
+  create: function(klass, args) {
+    // This assumes that the klass's first argument is a 'parent' value
+    var args = args ? [this].concat(args) : [this];
+    var obj = Function.splat(klass, args);
+    this.push(obj);
+    return obj;
   }
-  require(["scripts/lib/drawable.js"], init);
-})()
+})

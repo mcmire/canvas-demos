@@ -7,6 +7,7 @@
 // CHANGES FROM THE ORIGINAL:
 // - Add classProperties
 // - Add special logic for extending an array
+//   (Inspired by http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/)
 // - Add a sort of multiple inheritance
 //
 (function(){
@@ -14,18 +15,18 @@
   // The base Class implementation (does nothing)
   this.Class = function(){};
   
-  function initArray() {
+  function initArray(proto) {
     var arr = [ ];
     // This doesn't work in IE < 8 but I don't really care
-    // Note that "this" refers to the prototype object defined below
-    arr.__proto__ = this;
+    arr.__proto__ = proto;
+    //arr.constructor = Array;
     return arr;
   }
   
   // Create a new Class that inherits from this class
   Class.extend = function(/*[mixins, ]instanceProperties[, classProperties]*/) {
     var mixins, instanceProperties, classProperties;
-    if (arguments.length == 3) {
+    if ($.isArray(arguments[0])) {
       mixins = arguments[0], instanceProperties = arguments[1], classProperties = arguments[2];
     } else {
       instanceProperties = arguments[0], classProperties = arguments[1];
@@ -46,7 +47,7 @@
           // Set the context for all future interaction with the object we are building,
           // which is an array instead of a direct instance of the class we have just created
           // (its prototype is the prototype we built when building the class, though, so it works out).
-          var ret = initArray.call(this);
+          var ret = initArray(Class.prototype); // Class.prototype or this?
           // All construction is actually done in the init method
           this.init.apply(ret, arguments);
           return ret;
@@ -73,7 +74,7 @@
     for (var i=0; i<mixins; i++) {
       var mixin = mixins[i];
       for (var name in mixin.prototype) {
-        prototype[name] = mixin.prototype[name]
+        if (name != "init" && mixin.prototype.hasOwnProperty(name)) prototype[name] = mixin.prototype[name];
       }
     }
     
@@ -171,6 +172,16 @@
       }
     }
     */
+    
+    if (subclassingArray) {
+      // Wrap slice in a function that ensures we return a Vector
+      prototype.slice = (function(fn, klass) {
+        return function() {
+          var ret = fn.apply(this, arguments);
+          return new klass(ret);
+        }
+      })(Array.prototype.slice, Class)
+    }
     
     // PATCH: Add a way to access private members
     // http://webreflection.blogspot.com/2008/04/natural-javascript-private-methods.html

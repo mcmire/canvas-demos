@@ -9,7 +9,7 @@ var Canvas = Class.extend((function() {
     var $starterBtn = $('<button>Start</button>');
     var $resetBtn = $('<button>Reset</button>');
     $pauserBtn.click(function() {
-      if (canvas.state == "paused") {
+      if (canvas.withinState == "paused") {
         canvas.resume();
       } else {
         canvas.pause();
@@ -21,7 +21,7 @@ var Canvas = Class.extend((function() {
       return false;
     })
     $starterBtn.click(function() {
-      if (canvas.state == "running") {
+      if (canvas.withinState == "running") {
         canvas.stop();
       } else {
         canvas.start();
@@ -52,11 +52,7 @@ var Canvas = Class.extend((function() {
     this.$controlsDiv.append(this.$debugDiv);
   }
   function drawObjects() {
-    var objects = _.select(this.objects, function(obj) { return obj.drawable });
-    // Honestly, we're splitting these into two steps just for the boids simulation,
-    // but it could be useful for other stuff too(?)
-    $.each(objects, function(i, obj) { obj.aim() });
-    $.each(objects, function(i, obj) { obj.move(); obj.draw() });
+    this.objects.redraw();
   }
   function addFpsDisplay() {
     this.$fpsDiv = $('<p id="canvas-fps">f/s:</p>');
@@ -99,7 +95,7 @@ var Canvas = Class.extend((function() {
       this.mspf = 1000 / this.options.fps;
 
       this.frameNo = 0;
-      this.state = "stopped";
+      this.withinState = "stopped";
       this.objects = new DrawableCollection(this);
     },
     
@@ -124,7 +120,7 @@ var Canvas = Class.extend((function() {
     kill: function() {
       this.clearTimer();
       this.startTime = null;
-      this.state = "stopped";
+      this.withinState = "stopped";
     },
     stop: function() {
       this.kill();
@@ -138,7 +134,7 @@ var Canvas = Class.extend((function() {
     },
     pause: function() {
       this.clearTimer();
-      this.state = "paused";
+      this.withinState = "paused";
       this.$pauserBtn.text("Resume");
       this.$starterBtn.text("Start");
     },
@@ -150,7 +146,7 @@ var Canvas = Class.extend((function() {
     },
     revive: function() {
       this.startTimer();
-      this.state = "running";
+      this.withinState = "running";
     },
     resume: function() {
       this.revive();
@@ -190,10 +186,10 @@ var Canvas = Class.extend((function() {
           bx = by = 0;
           break;
       }
-      return [
+      return new Vector(
         Math.rand(this.options.width - bx),
         Math.rand(this.options.height - by)
-      ];
+      );
     },
     center: function() {
       return [
@@ -213,26 +209,36 @@ var Canvas = Class.extend((function() {
 
 Canvas.CanvasContextHelpers = {
   line: function(x1, y1, x2, y2, options) {
-    var options = options || {};
-    this.createShape(options, function() {
-      this.moveTo(x1, y1);
-      this.lineTo(x2, y2);
+    var options = $.extend({}, options, {
+      origin: [ ((x2-x1)/2), ((y2-y1)/2) ],
+      coords: [ [x1, y1], [x2, y2] ]
+    })
+    this.createShape(options, function(o) {
+      this.moveTo(o.coords[0][0], o.coords[0][1]);
+      this.lineTo(o.coords[1][0], o.coords[1][1]);
     })
   },
   circle: function(x, y, radius, options) {
-    this.createShape(options, function() {
-      this.arc(x, y, radius, 0, 2*Math.PI);
+    var options = $.extend({}, options, {
+      origin: [x, y],
+      coords: [[x, y]]
+    })
+    this.createShape(options, function(o) {
+      this.arc(o.origin[0], o.origin[1], radius, 0, 2*Math.PI);
     });
   },
-  // This creates a triangle that points to the right.
-  // TODO: Update these to add beginPath() / closePath()
   triangle: function(x, y, w, h, options) {
-    this.createShape(options, function() {
-      this.moveTo(x - (w / 2), y - (h / 2));
-      this.lineTo(x - (w / 2), y + (h / 2));
-      this.lineTo(x + (w / 2), y          );
+    var options = $.extend({}, options, {
+      origin: [x, y],
+      coords: [[x, y]]
+    })
+    this.createShape(options, function(o) {
+      this.moveTo(o.origin[0] - (w / 2), o.origin[1] - (h / 2));
+      this.lineTo(o.origin[0] - (w / 2), o.origin[1] + (h / 2));
+      this.lineTo(o.origin[0] + (w / 2), o.origin[1]          );
     })
   },
+  // TODO: Apply transformation, and add createShape
   arrow: function(p1, p2) {
     var dy = p2[1] - p1[1];
     var dx = p1[1] - p1[0];
@@ -249,21 +255,49 @@ Canvas.CanvasContextHelpers = {
     this.lineTo(p2[0]-(sdx*2), p2[1]-(sdy*2));
     this.lineTo(p2[0]-sdx, p2[1]-sdy);
   },
-  createPath: function(callback) {
-    this.beginPath();
+  
+  withinState: function(callback) {
+    this.save();
     callback.call(this);
+    this.restore();
+  },
+  withinPath: function(callback, options) {
+    this.beginPath();
+    callback.call(this, options);
     this.closePath();
   },
-  createShape: function(/* options, callback OR callback */) {
+  createShape: function(/* options, callback | callback */) {
     var args = [].slice.call(arguments);
     var sgra = args.reverse();
     var callback = sgra[0], options = sgra[1];
-    var options = options || {};
+    var options = this.applyRotation(options || {});
+    
     if (options.fill) { action = "fill"; color = options.fill }
     if (options.stroke) { action = "stroke"; color = options.stroke }
     if (color) this[action + "Style"] = color;
     if (options.lineWidth) this.lineWidth = options.lineWidth;
-    this.createPath(callback);
+    
+    if (options.rotate || options.translate) {
+      this.withinState(function() {
+        if (options.translate) this.translate.apply(this, options.translate);
+        if (options.rotate) this.rotate(options.rotate);
+        this.withinPath(callback, options);
+      })
+    } else {
+      this.withinPath(callback, options);
+    }
+    
     if (action) this[action]();
+  },
+  applyRotation: function(args) {
+    if (!args.rotate || args.translate) return args;
+    //var args = $.extend(true, {}, args); // deep copy
+    $.each(args.coords, function(i, coord) {
+      coord[0] -= args.origin[0]
+      coord[1] -= args.origin[1]
+    })
+    args.translate = args.origin;
+    args.origin = [0, 0];
+    return args;
   }
 }
