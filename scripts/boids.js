@@ -8,12 +8,6 @@
         this._super(options);
         this.index = options.index;
       },
-      //defaultPosition: function() {
-      //  return new Vector(100, 100);
-      //},
-      //defaultVelocity: function() {
-      //  return new Vector(2, 2);
-      //},
       width: function() {
         return this.options.width;
       },

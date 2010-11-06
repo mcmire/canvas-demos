@@ -3,45 +3,17 @@
 <head>
   <title>Test</title>
   <link rel="stylesheet" href="styles/global.css">
-</head>
-<body>
-  <div id="whatever"></div>
   
   <script src="scripts/vendor/jquery.js"></script>
   <script src="scripts/vendor/underscore.js"></script>
   <script src="scripts/lib/underscore_patches.js"></script>
-  <script src="scripts/vendor/inheritance.js"></script>
-  <script src="scripts/lib/utils.js"></script>
-  <script src="scripts/lib/vector2.js"></script>
-  <script src="scripts/lib/drawable.js"></script>
-  <script src="scripts/lib/drawable_collection.js"></script>
-  <script src="scripts/lib/canvas.js"></script>
-  <script src="scripts/lib/shape.js"></script>
-  <script src="scripts/lib/collision.mixin.js"></script>
+  <script src="scripts/vendor/coffeescript.min.js"></script>
+</head>
+<body>
+  <p>Nothing here, just Javascript files.</p>
   
-  <script>
-  /*
-  var canvas = window.canvas = new Canvas("#whatever", {
-    width: 500,
-    height: 500
-  })
-  var Thing = Drawable.extend({
-    init: function(parent) {
-      this._super(parent);
-      this.vel = new Vector(2, 2);
-      this.pos = new Vector(30, 30);
-    },
-    calcPos: function() {
-      this.pos = Vector.add(this.pos, this.vel);
-    },
-    redraw: function() {
-      this.calcPos();
-      this.cxt.circle(this.pos[0], this.pos[1], 10, {fill: "black"})
-    }
-  })
-  canvas.objects.add(Thing);
-  */
-  </script>  
+  
+  <script type="text/coffeescript" src="coffee"></script>
   
 </body>
 </html>
