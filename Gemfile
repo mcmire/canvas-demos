@@ -1,7 +1,7 @@
 source :rubygems
 
 group :test do
-  gem "guard-coffeescript"
-  gem "rb-fsevent"
-  gem "growl"
+  gem "watchr"
+  gem "ruby-fsevent"
+  gem "open4"
 end

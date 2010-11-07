@@ -109,3 +109,10 @@ var Vector = (function() {
   
   return Vector;
 })()
+
+// Just a shortcut
+var $V = function() {
+  // XXX: Performance issue?
+  return new Vector(Array.prototype.slice.call(arguments))
+}
+$.extend($V, Vector);

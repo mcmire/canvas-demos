@@ -210,7 +210,8 @@
 Array.extend = Class.extend;
 Array.prototype.init = function() {
   // Accept an array or a list of values as the arguments
-  var args = ($.isArray(arguments[0]) ? arguments[0] : arguments)
+  // XXX: Performance issue?
+  var args = _.flatten(arguments);
   this.push.apply(this, args);
   return this;
 }
