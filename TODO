@@ -1,2 +1,0 @@
-* get coffeescript working with watchr/guard and jasmine so we can compile not only real files but also test files
-* figure out why the boids sim is so slow

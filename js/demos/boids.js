@@ -3,7 +3,7 @@
     
     var BoidsCanvas = Canvas.extend();
     
-    var Boid = Shape.extend({
+    var Boid = BoidsCanvas.Boid = Shape.extend({
       setOptions: function(options) {
         this._super(options);
         this.index = options.index;
