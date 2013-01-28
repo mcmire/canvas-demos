@@ -235,15 +235,15 @@ function()
   window.EasingGraph = function(canvas, element) {
     this.canvas = canvas;
     var $element = this.$element = $(element);
-    this.cxt = this.$element[0].getContext("2d");
+    this.ctx = this.$element[0].getContext("2d");
     this.width = $element.attr("width");
     this.height = $element.attr("height");
   }
   EasingGraph.prototype.redraw = function() {
     var func = this.canvas.easingFormula.code;
     this.clear();
-    this.cxt.beginPath();
-    this.cxt.moveTo(0, this.height);
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, this.height);
     var maxT = this.width;
     var maxX = this.height;
     var res = maxT / 25;
@@ -252,15 +252,15 @@ function()
       var dt = maxT;
       var x0 = 0;
       var x = func(dx, dt, x0, t);
-      this.cxt.lineTo(t, this.height - x);
+      this.ctx.lineTo(t, this.height - x);
     }
     // don't close path or else the next time the line is drawn
     // the last line drawn will still appear
-    //this.cxt.closePath();
-    this.cxt.stroke();
+    //this.ctx.closePath();
+    this.ctx.stroke();
   }
   EasingGraph.prototype.clear = function() {
-    this.cxt.clearRect(0, 0, this.width, this.height);
+    this.ctx.clearRect(0, 0, this.width, this.height);
   }
 
   window.EasingCanvas = Canvas.extend({
@@ -286,7 +286,7 @@ function()
     _addEasingGraph: function() {
       var width = 150, height = 150;
       var $graph = $('<canvas id="easing-graph" width="150" height="150">');
-      var graph = new EasingGraph(this, $graph);
+      var graph = EasingGraph(this, $graph);
       this.$easingDropdown.bind('change.easing-graph', function() { graph.redraw() })
       this.$controlsDiv.after($graph);
       this.$easingDropdown.trigger('change.easing-graph');
@@ -316,11 +316,11 @@ function()
       }
     },
     drawShape: function() {
-      this.cxt.circle(this.pos, 200, this.radius, {fill: "black"});
+      this.ctx.circle(this.pos, 200, this.radius, {fill: "black"});
     }
   });
 
-  var canvas = new EasingCanvas("#wrapper", {
+  var canvas = EasingCanvas("#wrapper", {
     width: 800,
     height: 300,
     fps: 30,

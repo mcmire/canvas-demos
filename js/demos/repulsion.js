@@ -27,7 +27,7 @@ function()
       debug("Position: " + this.pos);
     },
     drawShape: function() {
-      this.cxt.circle(this.pos[0], this.pos[1], this.radius, {fill: this.color});
+      this.ctx.circle(this.pos[0], this.pos[1], this.radius, {fill: this.color});
     },
     bounds: function(pos) { // x1, x2, y1, y2
       var pos = pos || this.pos;
@@ -41,7 +41,7 @@ function()
   var RepulsionCanvas = Canvas.extend({
     init: function(id) {
       this._super(id);
-      this.ball = new Ball(this, {radius: 10});
+      this.ball = Ball(this, {radius: 10});
       this.fps = 20;
     },
     draw: function() {
@@ -156,6 +156,6 @@ function()
   RepulsionCanvas.repulsionLimit = 30;
 
   $(function() {
-    var canvas = new RepulsionCanvas("#canvas");
+    var canvas = RepulsionCanvas("#canvas");
   })
 })

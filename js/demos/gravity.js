@@ -1,7 +1,7 @@
 var GravityObject = Class.extend({
   init: function(canvas, options) {
     this.canvas = canvas;
-    this.cxt = canvas.cxt;
+    this.ctx = canvas.ctx;
     this.options = options;
     this.width = options.width;
     this.height = options.height;
@@ -15,16 +15,16 @@ var GravityObject = Class.extend({
     this.drawShape();
   },
   drawShape: function() {
-    this.cxt.save();
-    this.cxt.fillStyle = this.color;
-    this.cxt.beginPath();
-    this.cxt.translate(this.pos[0], this.pos[1])
+    this.ctx.save();
+    this.ctx.fillStyle = this.color;
+    this.ctx.beginPath();
+    this.ctx.translate(this.pos[0], this.pos[1])
     var theta = Vector.angle(this.vel);
-    this.cxt.rotate(theta);
-    this.cxt.triangle(0, 0, this.width, this.height);
-    this.cxt.closePath();
-    this.cxt.fill();
-    this.cxt.restore();
+    this.ctx.rotate(theta);
+    this.ctx.triangle(0, 0, this.width, this.height);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.restore();
   }
 })
 GravityObject.generate = function(canvas, options) {
@@ -35,14 +35,14 @@ GravityObject.generate = function(canvas, options) {
     height: r * 1.5,
     mass: m * Math.pow(10, 6)
   });
-  return new this(canvas, options);
+  return GravityObject(canvas, options);
 }
 
 var GravityCanvas = Canvas.extend({
   init: function(id) {
     this._super(id);
     this.fps = 30;
-    var obj = new GravityObject(this, {
+    var obj = GravityObject(this, {
       type: "attractive",
       pos: Vector.subtract(this.center(), [300, 0]),
       vel: [0, 0],
@@ -109,6 +109,6 @@ Gravity.mixin({
 });
 
 $(function() {
-  var canvas = new GravityCanvas("#canvas");
+  var canvas = GravityCanvas("#canvas");
   canvas.bindMouseCallbacks();
 })

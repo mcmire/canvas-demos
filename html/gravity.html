@@ -1,18 +1,11 @@
 <!DOCTYPE HTML>
 <html>
+
 <head>
   <title>Gravity Demo</title>
-  <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script> -->
-  <script src="jquery.min.js"></script>
-  <script src="inheritance.js"></script>
-  <script src="vector.js"></script>
-  <script src="utils.js"></script>
-  <script src="logging.js"></script>
-  <script src="canvas.js"></script>
-  <script src="_gravity.js"></script>
-  <script src="gravity.js"></script>
-  <link rel="stylesheet" href="boids.css">
+  <link rel="stylesheet" href="../styles/global.css">
 </head>
+
 <body>
   <p>
     <a href="#" id="startstop">Start</a> |
@@ -22,5 +15,16 @@
   <p>Click on the canvas to add a triangle (after you click Start).</p>
   <p>Drag before you let go to "throw" a triangle.</p>
   <canvas id="canvas" width="800" height="600"></canvas>
+
+  <script src="../scripts/vendor/ender.js"></script>
+  <script src="../scripts/vendor/inheritance.js"></script>
+  <script src="../scripts/lib/utils.js"></script>
+  <script src="../scripts/lib/vector2.js"></script>
+  <script src="../scripts/lib/drawable.js"></script>
+  <script src="../scripts/lib/drawable_collection.js"></script>
+  <script src="../scripts/lib/canvas.js"></script>
+
+  <script src="../scripts/demos/gravity.js"></script>
 </body>
+
 </html>

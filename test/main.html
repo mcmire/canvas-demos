@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Main Test</title>
+  <link rel="stylesheet" href="mocha.css">
+</head>
+
+<body>
+  <div id="mocha"></div>
+
+  <script src="mocha.js"></script>
+  <script src="chai.js"></script>
+  <script>
+    mocha.ui('bdd');
+    mocha.reporter('html')
+    window.assert = chai.assert;
+  </script>
+
+  <script src="../js/vendor/ender.js"></script>
+  <script src="../js/vendor/p.js"></script>
+  <script src="../js/lib/util.js"></script>
+  <script src="../js/lib/valentine_ext.js"></script>
+  <script src="../js/lib/vector3.js"></script>
+
+  <script src="vector3_test.js"></script>
+
+  <script>
+    if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
+    else { mocha.run(); }
+  </script>
+</body>
+
+</html>
+
