@@ -3,21 +3,25 @@
 
 <head>
   <title>Test</title>
-  <link rel="stylesheet" href="../styles/global.css">
 </head>
 
 <body>
-  <p>Nothing here, just Javascript files.</p>
-
-  <script src="../scripts/vendor/ender.js"></script>
-  <script src="../scripts/vendor/inheritance.js"></script>
-  <script src="../scripts/lib/utils.js"></script>
-  <script src="../scripts/lib/vector2.js"></script>
-  <script src="../scripts/lib/drawable.js"></script>
-  <script src="../scripts/lib/drawable_collection.js"></script>
-  <script src="../scripts/lib/canvas.js"></script>
-
-  <script src="../scripts/demos/boids.js"></script>
+  <script src="../js/vendor/p.js"></script>
+  <script>
+    var Shape = function (parent) {
+      this.ctx = parent.ctx
+    }
+    var Circle = P(Shape, function (proto, uber) {
+      return {
+        init: function (parent) {
+          uber.init.call(this, parent)
+        }
+      }
+    })
+    var Square = P(Circle, function () {
+      // ...
+    })
+  </script>
 </body>
 
 </html>
