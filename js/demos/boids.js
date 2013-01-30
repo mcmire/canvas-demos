@@ -2,7 +2,7 @@
 (function() {
   var Boid, BoidCollection, canvas, boids
 
-  Boid = P(Shape, function (proto, uber, klass) {
+  Boid = P(CanvasObject, function (proto, uber, klass) {
     klass.maxSpeed = 5
     return {
       setOptions: function(options) {
@@ -28,7 +28,7 @@
         //Vec2.limit(this.vel, [Boid.maxSpeed, Boid.maxSpeed])
       },
 
-      drawShape: function() {
+      render: function() {
         var color
         color = (this.index == 0) ? "red" : "black"
         this.canvas.triangle(this.pos[0], this.pos[1], this.width(), this.height(), {
@@ -55,7 +55,7 @@
         }
         for (i = 0; i < len; i++) {
           this.objects[i].setPos()
-          this.objects[i].drawShape()
+          this.objects[i].render()
         }
       },
 

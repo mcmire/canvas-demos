@@ -1,7 +1,7 @@
 
 'use strict'
 
-var Shape = P(Drawable, function(proto, uber) {
+var CanvasObject = P(Drawable, function(proto, uber) {
   return {
     init: function(parent, opts) {
       uber.init.call(this, parent)
@@ -24,11 +24,11 @@ var Shape = P(Drawable, function(proto, uber) {
       this.setAcc()
       this.setVel()
       this.setPos()
-      this.drawShape()
+      this.render()
     },
 
     setAcc: function() {
-      throw new Error("You need to implement Shape#setAcc")
+      throw new Error("You need to implement CanvasObject#setAcc")
     },
 
     setVel: function() {
@@ -39,8 +39,8 @@ var Shape = P(Drawable, function(proto, uber) {
       Vec2.add(this.pos, this.vel)
     },
 
-    drawShape: function() {
-      throw new Error("You need to implement Shape#drawShape")
+    drawCanvasObject: function() {
+      throw new Error("You need to implement CanvasObject#drawCanvasObject")
     },
 
     defaultPosition: function() {
@@ -68,11 +68,11 @@ var Shape = P(Drawable, function(proto, uber) {
     },
 
     width: function() {
-      throw new Error("You need to implement Shape#width")
+      throw new Error("You need to implement CanvasObject#width")
     },
 
     height: function() {
-      throw new Error("You need to implement Shape#height")
+      throw new Error("You need to implement CanvasObject#height")
     }
   }
 })

@@ -23,7 +23,7 @@ var Canvas = P(function(proto, uber, klass, uberklass) {
       return false
     })
     $drawBtn.on('click', function() {
-      canvas.drawOne()
+      canvas.redrawOnce()
       return false
     })
     $starterBtn.on('click', function() {
@@ -61,7 +61,7 @@ var Canvas = P(function(proto, uber, klass, uberklass) {
     this.$debugDiv = $('<p id="canvas-debug">(debug goes here)</p>')
     this.$controlsDiv.append(this.$debugDiv)
   }
-  function drawObjects() {
+  function redrawObjects() {
     this.objects.redraw()
   }
   function addFpsDisplay() {
@@ -116,15 +116,15 @@ var Canvas = P(function(proto, uber, klass, uberklass) {
       return objects
     },
 
-    drawOne: function() {
+    redrawOnce: function() {
       this.clear()
-      drawObjects.call(this)
+      redrawObjects.call(this)
       this.frameNo++
     },
     redraw: function() {
       if (this.options.trackFps) dumpFps.call(this)
       if (this.options.showClock) redrawClock.call(this)
-      this.drawOne()
+      this.redrawOnce()
     },
     start: function() {
       this.reset()
@@ -230,3 +230,4 @@ var Canvas = P(function(proto, uber, klass, uberklass) {
 
   $.v.extend(proto, CanvasHelpers)
 })
+
