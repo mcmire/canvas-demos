@@ -107,7 +107,13 @@ var Canvas = P(function(proto, uber, klass, uberklass) {
 
       this.frameNo = 0
       this.state = "stopped"
-      this.objects = DrawableCollection(this)
+    },
+
+    buildObjectCollection: function (cons) {
+      var objects
+      objects = cons(this)
+      this.objects = objects
+      return objects
     },
 
     drawOne: function() {

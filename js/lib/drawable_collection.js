@@ -2,41 +2,36 @@
 'use strict'
 
 var DrawableCollection = (function () {
-  var proto, DrawableCollection
-
+  var proto
   proto = {
-    init: function(canvas, number, klass, args) {
-      uber.init.call(this, args || [])
-    },
-
     redraw: function() {
-      _(this).chain().
-        select(function(obj) { return obj.drawable }).
-        each(function(obj) { obj.redraw() })
-    },
-
-    add: function() {
-      this.create.apply(this, arguments)
-      return this
-    },
-
-    addMany: function(number, klass, args) {
-      var isFunc, i, fargs
-      isFunc = (typeof args === 'function')
-      for (i = 0; i < number; i++) {
-        fargs = isFunc ? args(i) : args
-        this.add(klass, fargs)
+      for (var i = 0; i < this.objects; i++) {
+        this.objects[i].redraw()
       }
     },
 
-    // Like add, but returns the object added
-    create: function(klass, rest) {
-      var args, obj
+    addObject: function(klass, opts) {
+      var args, object
       // This assumes that the klass's first argument is a 'parent' value
-      args = rest ? [this].concat(rest) : [this]
-      obj = klass.apply(null, args)
-      this.push(obj)
-      return obj
+      // and that `klass` is a P constructor
+      args = opts ? [this].concat(opts) : [this]
+      object = klass.apply(null, args)
+      this.push(object)
+      return object
+    },
+
+    stopDrawingObject: function (object) {
+      var idx
+      idx = this.objects.indexOf(object)
+      this.hiddenObjects.push(object)
+      if (idx) this.objects.splice(idx, 1)
+    },
+
+    resumeDrawingObject: function (object) {
+      var idx
+      idx = this.hiddenObjects.indexOf(object)
+      this.objects.push(object)
+      if (idx) this.hiddenObjects.splice(idx, 1)
     }
   }
 
@@ -44,7 +39,6 @@ var DrawableCollection = (function () {
     var coll = [];
     $.v.extend(coll, Drawable.prototype, proto)
     Drawable.prototype.init.call(coll, canvas)
-    if (arguments.length == 4) coll.addMany(number, klass, args)
     return coll
   }
   return DrawableCollection

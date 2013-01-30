@@ -3,9 +3,9 @@
 
 var Shape = P(Drawable, function(proto, uber) {
   return {
-    init: function(canvas, options) {
-      uber.init.call(this, canvas)
-      this.setOptions(options)
+    init: function(parent, opts) {
+      uber.init.call(this, parent)
+      this.setOptions(opts)
     },
 
     setOptions: function(options) {
