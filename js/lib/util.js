@@ -2,10 +2,10 @@
 'use strict'
 
 var util = (function () {
-  var util = {}
-    , rand = {}
-    , arr = {}
-    , fn = {}
+  var util = {},
+      rand = {},
+      arr = {},
+      fn = {}
 
   // Return a number from 0..max, or min..max
   // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Math/random
