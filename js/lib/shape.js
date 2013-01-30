@@ -49,7 +49,7 @@ var Shape = P(Drawable, function(proto, uber) {
 
     defaultVelocity: function() {
       //return this.randomVector(10)
-      return Vec2(10,10)
+      return Vec2(2,2)
     },
 
     defaultAcceleration: function() {

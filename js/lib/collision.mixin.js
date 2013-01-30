@@ -1,6 +1,8 @@
 
 'use strict'
 
+// TODO : Improve this to be a proper mixin we can take to the class
+// in question
 var Collision = {
   mixin: function(args) {
     args.canvasClass.prototype.collision = function(obj) {
