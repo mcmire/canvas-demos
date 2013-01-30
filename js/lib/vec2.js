@@ -9,12 +9,14 @@ var Vec2 = function (x, y) {
 
 // Operations on a vector using another
 
+// TODO : Update so the flow is always <==
 Vec2.add = Vec2.add$ = function (v1, v2, out) {
   if (!out) out = v1
   out[0] = v1[0] + v2[0]
   out[1] = v1[1] + v2[1]
 }
 
+// TODO : Update so the flow is always <==
 Vec2.sub = Vec2.sub$ = function (v1, v2, out) {
   if (!out) out = v1
   out[0] = v1[0] - v2[0]
@@ -45,12 +47,14 @@ Vec2.slopeBetween = function (v1, v2) {
 
 // Operations on one vector
 
+// TODO : Update so the flow is always <==
 Vec2.mul = Vec2.mul$ = function (v, s, out) {
   if (!out) out = v
   out[0] = v[0] * s
   out[1] = v[1] * s
 }
 
+// TODO : Update so the flow is always <==
 Vec2.div = Vec2.div$ = function (v, s, out) {
   if (!out) out = v
   out[0] = v[0] / s
@@ -64,6 +68,10 @@ Vec2.invert = Vec2.invert$ = function (v, out) {
 }
 
 // Calculations on one vector
+
+Vec2.clone = function (v) {
+  return Vec2(v[0], v[1])
+}
 
 Vec2.mag = Vec2.len = function (v) {
   return Math.sqrt(v[0] * v[0] + v[1] * v[1])

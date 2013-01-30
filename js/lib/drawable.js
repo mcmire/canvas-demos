@@ -3,7 +3,7 @@
 
 var Drawable = P(function () {
   return {
-    init: function(parent, opts) {
+    init: function(parent) {
       this.setParent(parent)
     },
 

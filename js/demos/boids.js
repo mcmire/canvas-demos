@@ -10,28 +10,16 @@
         this.index = options.index
       },
 
-      width: function() {
-        return this.options.width
-      },
-
-      height: function() {
-        return this.options.height
-      },
-
-      setAcc: function() {
-        // do nothing for right now
-      },
-
       setVel: function() {
-        var vel = this.parent.applyRules(this)
-        Vec2.add(this.vel, vel)
-        //Vec2.limit(this.vel, [Boid.maxSpeed, Boid.maxSpeed])
+        uber.setVel.call(this)
+        this.parent.applyRulesTo(this)
+        collision.applyTo(this.canvas, this)
       },
 
       render: function() {
         var color
         color = (this.index == 0) ? "red" : "black"
-        this.canvas.triangle(this.pos[0], this.pos[1], this.width(), this.height(), {
+        this.canvas.triangle(this.pos[0], this.pos[1], this.width, this.height, {
           rotate: Vec2.angle(this.vel),
           fill: color
         })
@@ -59,16 +47,10 @@
         }
       },
 
-      applyRules: function (boid) {
-        var cohesionVel, separationVel, alignmentVel, finalVel
-        cohesionVel = this.cohesionRule(boid)
-        separationVel = this.separationRule(boid)
-        alignmentVel = this.alignmentRule(boid)
-        finalVel = Vec2(0,0)
-        Vec2.add(finalVel, cohesionVel)
-        Vec2.add(finalVel, separationVel)
-        Vec2.add(finalVel, alignmentVel)
-        return finalVel
+      applyRulesTo: function (boid) {
+        this._applyCohesionRule(boid)
+        this._applySeparationRule(boid)
+        this._applyAlignmentRule(boid)
       },
 
       // Cohesion: Boids try to fly towards the center of mass of neighboring
@@ -78,9 +60,10 @@
       // because when a boid is trying to figure out where the center is,
       // though, it's not going to include itself (since it can't see itself).
       //
-      cohesionRule: function(boid) {
+      _applyCohesionRule: function (boid) {
         var v, i, len, j
         v = Vec2(0,0)
+        // TODO: Only consider nearest objects
         for (i = 0, j = 0, len = this.objects.length; i < len; i++) {
           if (this.objects[i] === boid) continue
           Vec2.add(v, this.objects[i].pos)
@@ -92,7 +75,8 @@
         Vec2.sub(v, boid.pos)
         // So, my displacement vector is a small movement toward the centroid
         Vec2.div(v, 100)
-        return v
+        // Apply the rule
+        Vec2.add(boid.vel, v)
       },
 
       // Separation: Boids try to keep a small distance away from other objects
@@ -106,7 +90,7 @@
       // It's worth noting that this rule will apply doubly -- if two boids are
       // within the same disallowed range, both will back away from each other.
       //
-      separationRule: function(boid) {
+      _applySeparationRule: function (boid) {
         var v1, kr, kv, i
         v1 = Vec2(0,0)
         kr = this.sepDistLimit
@@ -133,7 +117,8 @@
             Vec2.sub(v1, v2)
           }
         }
-        return v1
+        // Apply the rule
+        Vec2.add(boid.vel, v1)
       },
 
       // Alignment: Boids try to match velocity with near boids.
@@ -142,7 +127,7 @@
       // of the other boids we average the velocities. We calculate a 'perceived
       // velocity', then add a small portion to the boid's current velocity.
       //
-      alignmentRule: function(boid) {
+      _applyAlignmentRule: function (boid) {
         var v, i, j
         v = Vec2(0,0)
         for (i = 0, j = 0, len = this.objects.length; i < len; i++) {
@@ -156,15 +141,10 @@
         Vec2.sub(v, boid.vel)
         // So, my new velocity is a small movement toward the avg velocity
         Vec2.div(v, 8)
-        return v
+        // Apply the rule
+        Vec2.add(boid.vel, v)
       }
     }
-  })
-
-  // TODO: Clean up
-  Collision.mixin({
-    canvasClass: Canvas,
-    objectClasses: [Boid]
   })
 
   //---
@@ -178,7 +158,7 @@
   })
   boids = canvas.buildObjectCollection(BoidCollection)
   for (var i = 0; i < 60; i++) {
-    boids.addObject(Boid, {width: 8, height: 6, index: i})
+    boids.addObject(Boid, 8, 6, {index: i})
   }
 
   window.canvas = canvas

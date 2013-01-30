@@ -15,15 +15,16 @@ var DrawableCollection = P(Drawable, function (proto, uber) {
       }
     },
 
-    addObject: function(klass, opts) {
-      var args, object
+    addObject: function(klass/*, rest... */) {
+      var rest, args, object
+      rest = Array.prototype.slice.call(arguments, 1)
       // Does this work??
       if (!(klass.prototype instanceof Drawable)) {
         throw "klass must be a subclass of Drawable"
       }
       // This assumes that the klass's first argument is a 'parent' value
       // and that `klass` is a P constructor
-      args = opts ? [this].concat(opts) : [this]
+      args = rest ? [this].concat(rest) : [this]
       object = klass.apply(null, args)
       this.objects.push(object)
       return object
