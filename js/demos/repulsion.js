@@ -98,7 +98,7 @@
   //---
 
   canvas = Canvas('#wrapper')
-  objects = canvas.buildObjectCollection(DrawableCollection)
+  objects = canvas.buildObjectCollection(CanvasObjectCollection)
   objects.addObject(Ball, {radius: 10})
 
   window.canvas = canvas

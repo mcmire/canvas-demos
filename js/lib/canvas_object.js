@@ -22,6 +22,14 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
       this.color = opts.color
     },
 
+    stopDrawing: function() {
+      this.parent.stopDrawingObject(this)
+    },
+
+    resumeDrawing: function () {
+      this.parent.resumeDrawingObject(this)
+    },
+
     update: function () {
       this.setAcc()
       this.setVel()

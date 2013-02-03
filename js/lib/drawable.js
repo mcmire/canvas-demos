@@ -23,13 +23,5 @@ window.Drawable = P(function () {
     render: function() {
       throw new Error("You need to implement Drawable#render")
     },
-
-    stopDrawing: function() {
-      parent.stopDrawingObject(this)
-    },
-
-    resumeDrawing: function () {
-      parent.resumeDrawingObject(this)
-    }
   }
 })
