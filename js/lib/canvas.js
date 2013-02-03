@@ -1,8 +1,8 @@
 
 'use strict';
 
-var Canvas = P(function(proto, uber, klass, uberklass) {
-  $.v.extend(proto, {
+window.Canvas = P(function(proto, uber, klass, uberklass) {
+  return {
     init: function(id, options) {
       this.$wrapperElement = $(id)
       this.options = options || {}
@@ -271,8 +271,6 @@ var Canvas = P(function(proto, uber, klass, uberklass) {
     _clearDebug: function() {
       this.$debugDiv.html("")
     }
-  })
-
-  $.v.extend(proto, CanvasHelpers)
+  }
 })
 

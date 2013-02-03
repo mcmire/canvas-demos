@@ -1,7 +1,7 @@
 
-'use strict'
+'use strict';
 
-var Drawable = P(function () {
+window.Drawable = P(function () {
   return {
     init: function(parent) {
       this.setParent(parent)

@@ -1,7 +1,7 @@
 
-'use strict'
+'use strict';
 
-var DrawableCollection = P(Drawable, function (proto, uber) {
+window.DrawableCollection = P(Drawable, function (proto, uber) {
   return {
     init: function (parent) {
       uber.init.call(this, parent)

@@ -1,7 +1,8 @@
 
-'use strict'
+'use strict';
 
-var Gravity = {
+// FIXME
+window.Gravity = {
   mixin: function(args) {
     args.canvasClass.prototype.objectGravity = function(obj) {
       var newvel, balls, newpos

@@ -1,4 +1,6 @@
 
+'use strict';
+
 // Zip together multiple lists into a single array -- elements that share
 // an index go together.
 // Taken from Underscore

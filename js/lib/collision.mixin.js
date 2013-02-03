@@ -1,7 +1,7 @@
 
 'use strict';
 
-var collision = {
+window.collision = {
   applyTo: function(canvas, obj) {
     var bb, newpos, ob, dxa, dxb, dya, dyb, velslope, newvel
 
@@ -56,3 +56,4 @@ var collision = {
     }
   }
 }
+

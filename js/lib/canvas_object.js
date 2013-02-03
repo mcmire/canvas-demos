@@ -1,7 +1,7 @@
 
 'use strict';
 
-var CanvasObject = P(Drawable, function(proto, uber) {
+window.CanvasObject = P(Drawable, function(proto, uber) {
   return {
     init: function(parent, opts) {
       uber.init.call(this, parent)
@@ -35,7 +35,7 @@ var CanvasObject = P(Drawable, function(proto, uber) {
     setPos: function(interpFactor) {
       // this.pos + this.vel represents the target position
       // however, we have to take the interpolation factor into play
-      // on every update, this.pos 
+      // on every update, this.pos
       this.pos[0] += this.vel[0] * interpFactor
       this.pos[1] += this.vel[1] * interpFactor
     },

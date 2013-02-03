@@ -1,7 +1,7 @@
 
-'use strict'
+'use strict';
 
-var CanvasHelpers = {
+$.v.extend(Canvas.prototype, {
   line: function(x1, y1, x2, y2, options) {
     var options
     options = $.v.extend({}, options, {
@@ -131,5 +131,5 @@ var CanvasHelpers = {
     options.origin = [0, 0]
     return options
   }
-}
+})
 

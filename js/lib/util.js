@@ -1,7 +1,7 @@
 
-'use strict'
+'use strict';
 
-var util = (function () {
+window.util = (function () {
   var util = {},
       rand = {},
       arr = {},

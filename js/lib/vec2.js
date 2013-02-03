@@ -1,8 +1,10 @@
 
+'use strict';
+
 // The idea for the third argument to the operations comes from:
 // http://media.tojicode.com/sfjs-vectors/#31
 
-var Vec2 = function (x, y) {
+window.Vec2 = function (x, y) {
   // TODO: Use a Int16Array?
   return [x, y]
 }

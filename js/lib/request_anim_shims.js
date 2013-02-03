@@ -1,4 +1,6 @@
 
+'use strict';
+
 (function() {
   var fallbackCancelRequestAnimationFrame,
       fallbackRequestAnimationFrame,
