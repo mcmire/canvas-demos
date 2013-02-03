@@ -1,5 +1,5 @@
 
-'use strict'
+'use strict';
 
 var collision = {
   applyTo: function(canvas, obj) {
@@ -9,15 +9,15 @@ var collision = {
 
     // Go ahead and calculate new position based on present velocity even if it
     // goes past the bound
-    bb = canvas.bounds()             // Box bounds
+    bb = canvas.getBounds()             // Box bounds
     newpos = Vec2(0,0)
     Vec2.add(obj.pos, obj.vel, newpos)
-    ob = obj.getBoundsAt(newpos)     // Object bounds
+    ob = obj.getBoundsAt(newpos)        // Object bounds
 
-    dxa = (bb[0][0] - ob[0][0])      // Distance x1 box bound is past x1 obj bound
-    dxb = (ob[0][1] - bb[0][1])      // Distance x2 obj bound is past x2 box bound
-    dya = (bb[1][0] - ob[1][0])      // Distance y1 box bound is past y1 obj bound
-    dyb = (ob[1][1] - bb[1][1])      // Distance y2 obj bound is past y2 box bound
+    dxa = (bb[0][0] - ob[0][0])         // Distance x1 box bound is past x1 obj bound
+    dxb = (ob[0][1] - bb[0][1])         // Distance x2 obj bound is past x2 box bound
+    dya = (bb[1][0] - ob[1][0])         // Distance y1 box bound is past y1 obj bound
+    dyb = (ob[1][1] - bb[1][1])         // Distance y2 obj bound is past y2 box bound
     velslope = Vec2.slope(obj.vel)
 
     // If the position did cross over a box bound, back up the object by a

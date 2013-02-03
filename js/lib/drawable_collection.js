@@ -9,9 +9,17 @@ var DrawableCollection = P(Drawable, function (proto, uber) {
       this.hiddenObjects = []
     },
 
-    redraw: function() {
-      for (var i = 0; i < this.objects; i++) {
-        this.objects[i].redraw()
+    update: function () {
+      var i, len
+      for (i = 0, len = this.objects.length; i < len; i++) {
+        this.objects[i].update()
+      }
+    },
+
+    render: function(interpFactor) {
+      var i, len
+      for (i = 0, len = this.objects.length; i < len; i++) {
+        this.objects[i].render(interpFactor)
       }
     },
 

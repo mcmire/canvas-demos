@@ -8,34 +8,52 @@ var CanvasHelpers = {
       origin: [ ((x2-x1)/2), ((y2-y1)/2) ],
       coords: [ [x1, y1], [x2, y2] ]
     })
-    this.createShape(options, function(o) {
+    this.configurePath(options, function(o) {
       this.ctx.moveTo(o.coords[0][0], o.coords[0][1])
       this.ctx.lineTo(o.coords[1][0], o.coords[1][1])
     })
   },
+
   circle: function(x, y, radius, options) {
     var options
     options = $.v.extend({}, options, {
       origin: [x, y],
       coords: [[x, y]]
     })
-    this.createShape(options, function(o) {
+    this.configurePath(options, function(o) {
       this.ctx.arc(o.origin[0], o.origin[1], radius, 0, 2*Math.PI)
     })
   },
+
+  rect: function (x, y, w, h, options) {
+    var options
+    options = $.v.extend({}, options, {
+      origin: [x, y],
+      coords: [[x, y]]
+    })
+    this.configurePath(options, function(o) {
+      this.ctx.moveTo(o.origin[0], o.origin[1])
+      this.ctx.lineTo(o.origin[0]+w, o.origin[1])
+      this.ctx.lineTo(o.origin[0]+w, o.origin[1]+h)
+      this.ctx.lineTo(o.origin[0], o.origin[1]+h)
+      this.ctx.lineTo(o.origin[0], o.origin[1])
+    })
+  },
+
   triangle: function(x, y, w, h, options) {
     var options
     options = $.v.extend({}, options, {
       origin: [x, y],
       coords: [[x, y]]
     })
-    this.createShape(options, function(o) {
+    this.configurePath(options, function(o) {
       this.ctx.moveTo(o.origin[0] - (w / 2), o.origin[1] - (h / 2))
       this.ctx.lineTo(o.origin[0] - (w / 2), o.origin[1] + (h / 2))
       this.ctx.lineTo(o.origin[0] + (w / 2), o.origin[1]          )
     })
   },
-  // TODO: Apply transformation, and add createShape
+
+  // TODO: Apply transformation, and add configurePath
   arrow: function(p1, p2) {
     var dy, dx, f, sdy, sdx
     dy = p2[1] - p1[1]
@@ -57,24 +75,33 @@ var CanvasHelpers = {
     callback.call(this)
     this.ctx.restore()
   },
+
   withinPath: function(callback, options) {
     this.ctx.beginPath()
     callback.call(this, options)
     this.ctx.closePath()
   },
-  createShape: function(/* options, callback | callback */) {
-    var args, sgra, callback, options, action, color
+
+  configurePath: function(/* options, callback | callback */) {
+    var args, callback, options, action, color
 
     args = Array.prototype.slice.call(arguments)
-    sgra = args.reverse()
-    callback = sgra[0], options = sgra[1]
-    options = this.applyRotation(options || {})
+    args.reverse()
+    callback = args[0], options = args[1]
+    if (!options) options = {}
+    //options = this.applyRotation(options || {})
 
     if (options.fill) { action = "fill"; color = options.fill }
     if (options.stroke) { action = "stroke"; color = options.stroke }
     if (color) this.ctx[action + "Style"] = color
     if (options.lineWidth) this.ctx.lineWidth = options.lineWidth
 
+    this.configureShape(options, callback)
+
+    if (action) this.ctx[action]()
+  },
+
+  configureShape: function (options, callback) {
     if (options.rotate || options.translate) {
       this.withinState(function() {
         if (options.translate) this.ctx.translate.apply(this.ctx, options.translate)
@@ -84,19 +111,25 @@ var CanvasHelpers = {
     } else {
       this.withinPath(callback, options)
     }
-
-    if (action) this.ctx[action]()
   },
-  applyRotation: function(args) {
-    if (!args.rotate || args.translate) return args
-    //var args = $.v.extend(true, {}, args); // deep copy
-    $.v.each(args.coords, function(coord) {
-      coord[0] -= args.origin[0]
-      coord[1] -= args.origin[1]
-    })
-    args.translate = args.origin
-    args.origin = [0, 0]
-    return args
+
+  applyRotation: function(/* options, callback | callback */) {
+    var args, callback, options, i, len, coord
+    args = Array.prototype.slice.call(arguments)
+    args.reverse()
+    callback = args[0], options = args[1]
+    if (!options) options = {}
+
+    // Both rotate and translate cannot be given
+    if (!options.rotate || options.translate) return options
+
+    for (i = 0, len = options.coords; i < len; i++) {
+      options.coords[i][0] -= options.origin[0]
+      options.coords[i][1] -= options.origin[1]
+    }
+    options.translate = options.origin
+    options.origin = [0, 0]
+    return options
   }
 }
 

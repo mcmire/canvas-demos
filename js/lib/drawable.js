@@ -16,8 +16,12 @@ var Drawable = P(function () {
       this.ctx = this.canvas.ctx
     },
 
-    redraw: function() {
-      throw new Error("You need to implement Drawable#redraw")
+    update: function() {
+      throw new Error("You need to implement Drawable#update")
+    },
+
+    render: function() {
+      throw new Error("You need to implement Drawable#render")
     },
 
     stopDrawing: function() {

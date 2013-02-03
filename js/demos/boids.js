@@ -1,4 +1,6 @@
 
+'use strict';
+
 (function() {
   var Boid, BoidCollection, canvas, boids
 
@@ -158,7 +160,7 @@
   })
   boids = canvas.buildObjectCollection(BoidCollection)
   for (var i = 0; i < 60; i++) {
-    boids.addObject(Boid, 8, 6, {index: i})
+    boids.addObject(Boid, {width: 8, height: 6, index: i})
   }
 
   window.canvas = canvas

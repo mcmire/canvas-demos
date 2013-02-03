@@ -1,12 +1,10 @@
 
-'use strict'
+'use strict';
 
 var CanvasObject = P(Drawable, function(proto, uber) {
   return {
-    init: function(parent, width, height, opts) {
+    init: function(parent, opts) {
       uber.init.call(this, parent)
-      this.width = width
-      this.height = height
       this.setOptions(opts)
       if (!this.pos) this.pos = this.defaultPosition()
       if (!this.vel) this.vel = this.defaultVelocity()
@@ -16,21 +14,30 @@ var CanvasObject = P(Drawable, function(proto, uber) {
 
     setOptions: function(opts) {
       this.options = opts
+      this.width = opts.width
+      this.height = opts.height
       this.pos = opts.pos
       this.vel = opts.vel
       this.acc = opts.acc
       this.color = opts.color
     },
 
-    redraw: function() {
+    update: function () {
       this.setAcc()
       this.setVel()
-      this.setPos()
-      this.render()
     },
 
-    setPos: function() {
-      Vec2.add(this.pos, this.vel)
+    render: function(interpFactor) {
+      this.clear()
+      this.setPos(interpFactor)
+    },
+
+    setPos: function(interpFactor) {
+      // this.pos + this.vel represents the target position
+      // however, we have to take the interpolation factor into play
+      // on every update, this.pos 
+      this.pos[0] += this.vel[0] * interpFactor
+      this.pos[1] += this.vel[1] * interpFactor
     },
 
     setVel: function() {
@@ -41,8 +48,13 @@ var CanvasObject = P(Drawable, function(proto, uber) {
       // nothing happens by default
     },
 
-    drawCanvasObject: function() {
-      throw new Error("You need to implement CanvasObject#drawCanvasObject")
+    clear: function () {
+      this.ctx.clearRect(
+        this.pos[0]-(this.width/2),
+        this.pos[1]-(this.height/2),
+        this.width,
+        this.height
+      )
     },
 
     defaultPosition: function() {
