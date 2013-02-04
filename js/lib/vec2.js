@@ -6,7 +6,11 @@
 
 window.Vec2 = function (x, y) {
   // TODO: Use a Int16Array?
-  return [x, y]
+  if (arguments.length) {
+    return [x, y]
+  } else {
+    return [0, 0]
+  }
 }
 
 // Operations on a vector using another

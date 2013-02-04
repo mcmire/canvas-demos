@@ -23,34 +23,17 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this.tick = (function (_this) {
         var lastRenderTime = (new Date()).getTime()
         return function () {
-          var msPerTick, nextUpdateTime, now, realTime, interpFactor
-
-          //if (this.options.trackFps) this._dumpFps()
-          //if (this.options.showClock) this._tickClock()
+          var msPerTick
 
           // This is copied from:
-          // http://www.koonsolo.com/news/dewitters-gameloop/
+          // <http://gafferongames.com/game-physics/fix-your-timestep/>
 
           msPerTick = _this.msPerTick
-          nextUpdateTime = _this.nextUpdateTime
-
           now = (new Date()).getTime()
           realTime = now - _this.startTime
-          while (nextUpdateTime <= realTime) {
-            _this.objects.update()
-            nextUpdateTime += msPerTick
-          }
-          _this.nextUpdateTime = nextUpdateTime
 
-          // At this point, realTime < nextUpdateTime so bump it up so
-          // realTime > nextUpdateTime again
-          //if ((now - lastRenderTime) >= 50) {
-            interpFactor = ((realTime + msPerTick) - nextUpdateTime) / msPerTick
-            _this.objects.render(interpFactor)
-            _this.objects.update()
-            //_this.objects.render(1)
-            //lastRenderTime = now
-          //}
+          _this.objects.update(realTime, msPerTick)
+          _this.objects.render()
 
           if (_this.isRunning) {
             _this.timer = requestAnimFrame(_this.tick)
