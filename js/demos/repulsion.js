@@ -73,19 +73,18 @@
         this.width = this.height = options.radius * 2
       },
 
-      /*
-      defaultPosition: function() {
-        return Vec2(700, 50)
-      },
-      */
-
-      defaultVelocity: function() {
-        return Vec2(8, 4)
-      },
-
-      setVel: function() {
-        uber.setVel.call(this)
-        collision.applyTo(this.canvas, this)
+      accelerationAt: function(obj, t) {
+        var k, b, acc, spring, diff
+        k = 32
+        b = 1
+        acc = Vec2(0,0)
+        spring = Vec2(200,170)
+        diff = Vec2(0,0)
+        Vec2.sub(spring, obj.pos, diff)
+        acc[0] = k * (diff[0] / this.mass) - b * obj.vel[0]
+        acc[1] = k * (diff[1] / this.mass) - b * obj.vel[1]
+        //console.log(JSON.stringify({acc: acc}))
+        return acc
       },
 
       render: function() {
@@ -99,7 +98,12 @@
 
   canvas = Canvas('#wrapper')
   objects = canvas.buildObjectCollection(CanvasObjectCollection)
-  objects.addObject(Ball, {radius: 10})
+  objects.addObject(Ball, {
+    radius: 10,
+    pos: Vec2(200,250),
+    //vel: Vec2(0,0),
+    mass: 1
+  })
 
   window.canvas = canvas
 })()

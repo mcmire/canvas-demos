@@ -9,10 +9,10 @@ window.CanvasObjectCollection = P(Drawable, function (proto, uber) {
       this.hiddenObjects = []
     },
 
-    update: function () {
+    update: function (t, dt) {
       var i, len
       for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].update()
+        this.objects[i].update(t, dt)
       }
     },
 
@@ -20,6 +20,13 @@ window.CanvasObjectCollection = P(Drawable, function (proto, uber) {
       var i, len
       for (i = 0, len = this.objects.length; i < len; i++) {
         this.objects[i].render(interpFactor)
+      }
+    },
+
+    clear: function() {
+      var i, len
+      for (i = 0, len = this.objects.length; i < len; i++) {
+        this.objects[i].clear()
       }
     },
 

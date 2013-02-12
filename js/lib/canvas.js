@@ -6,7 +6,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     init: function(id, options) {
       this.$wrapperElement = $(id)
       this.options = options || {}
-      if (!this.options.ticksPerSecond) this.options.ticksPerSecond = 1
+      if (!this.options.ticksPerSecond) this.options.ticksPerSecond = 15
       if (!this.options.width) this.options.width = 800
       if (!this.options.height) this.options.height = 500
 
@@ -17,28 +17,29 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this._addCanvas()
 
       this.ctx = this.$canvasElement[0].getContext('2d')
-      this.msPerTick = 1000 / this.options.ticksPerSecond
-      console.log({msPerTick: this.msPerTick})
+      this.secondsPerTick = 1 / this.options.ticksPerSecond
 
-      this.tick = (function (_this) {
-        var lastRenderTime = (new Date()).getTime()
-        return function () {
-          var msPerTick
+      ;(function (_this) {
+        var dt, loop, tick
 
-          // This is copied from:
-          // <http://gafferongames.com/game-physics/fix-your-timestep/>
+        dt = _this.secondsPerTick
 
-          msPerTick = _this.msPerTick
-          now = (new Date()).getTime()
-          realTime = now - _this.startTime
-
-          _this.objects.update(realTime, msPerTick)
-          _this.objects.render()
-
+        loop = function () {
+          tick()
           if (_this.isRunning) {
-            _this.timer = requestAnimFrame(_this.tick)
+            _this.timer = requestAnimFrame(loop)
           }
         }
+
+        tick = function () {
+          _this.objects.clear()
+          _this.objects.update(_this.gameTime, dt)
+          _this.objects.render()
+          _this.gameTime += dt
+        }
+
+        _this.loop = loop
+        _this.tick = tick
       })(this)
     },
 
@@ -82,11 +83,6 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this.$starterBtn.text('Stop')
     },
 
-    tickOnce: function () {
-      this.objects.update()
-      this.objects.render(1)
-    },
-
     reset: function () {
       this.stop()
       this._clear()
@@ -107,7 +103,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
 
     randomPos: function(bx, by) {
       var bx, by
-      switch(arguments.length) {
+      switch (arguments.length) {
         case 2:
           bx = arguments[0]
           by = arguments[1]
@@ -126,10 +122,10 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     },
 
     center: function() {
-      return [
-        this.options.width / 2,
-        this.options.height / 2
-      ]
+      return Vec2(
+        Math.floor(this.options.width / 2),
+        Math.floor(this.options.height / 2)
+      )
     },
 
     //---
@@ -139,7 +135,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       // TODO: This should subtract time paused or something...
       this.startTime = (new Date()).getTime()
       this.gameTime = 0
-      this.tick()
+      this.loop()
     },
 
     _stopTimer: function () {
@@ -176,7 +172,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       })
 
       $drawBtn.on('click', function() {
-        canvas.tickOnce()
+        canvas.tick()
         return false
       })
 
