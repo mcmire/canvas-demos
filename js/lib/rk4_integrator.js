@@ -192,7 +192,7 @@
 // [1]: http://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods
 // [2]: http://gafferongames.com/game-physics/integration-basics
 //
-window.integrator = {
+window.rk4Integrator = {
   advance: function (obj, t, dt) {
     var k1, k2, k3, k4, dPos, dVel
 
