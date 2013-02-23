@@ -4,11 +4,14 @@
 window.Canvas = P(function(proto, uber, klass, uberklass) {
   return {
     init: function(id, options) {
+      var options
+
       this.$wrapperElement = $(id)
-      this.options = options || {}
-      if (!this.options.ticksPerSecond) this.options.ticksPerSecond = 15
-      if (!this.options.width) this.options.width = 800
-      if (!this.options.height) this.options.height = 500
+      this.options = options = options || {}
+
+      this.ticksPerSecond = ('ticksPerSecond' in options) ? options.ticksPerSecond : 15
+      this.width = ('width' in options) ? options.width : 800
+      this.height = ('height' in options) ? options.height : 500
 
       this._addControls()
       if (this.options.debug) this._addDebug()
@@ -17,25 +20,36 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this._addCanvas()
 
       this.ctx = this.$canvasElement[0].getContext('2d')
-      this.secondsPerTick = 1 / this.options.ticksPerSecond
+      this.secondsPerTick = 1 / this.ticksPerSecond
 
       ;(function (_this) {
-        var dt, loop, tick
+        var timeStep, loop, tick
 
-        dt = _this.secondsPerTick
+        timeStep = _this.secondsPerTick
 
         loop = function () {
-          tick()
+          ///tick()
           if (_this.isRunning) {
             _this.timer = requestAnimFrame(loop)
           }
         }
 
         tick = function () {
+          var t, tickElapsedTime, alpha
+          t = (new Date()).getTime()
+          tickElapsedTime = t - _this.lastTickTime
+          // Cap this to avoid "spiral of death".
+          // (Honestly not sure why this is 250ms? A magic number if I ever saw one)
+          if (tickElapsedTime > 250) { tickElapsedTime = 250 }
+
+          _this.timeSinceLastUpdate += tickElapsedTime
           _this.objects.clear()
-          _this.objects.update(_this.gameTime, dt)
-          _this.objects.render()
-          _this.gameTime += dt
+          while (_this.timeSinceLastUpdate >= timeStep) {
+            _this.objects.update(tickElapsedTime, timeStep)
+            _this.timeSinceLastUpdate -= timeStep
+          }
+          _this.objects.render(timeStep)
+          _this.lastTickTime = t
         }
 
         _this.loop = loop
@@ -96,8 +110,8 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       var miter
       miter = miter || 0
       return [
-        [0 + miter, this.options.width - miter],
-        [0 + miter, this.options.height - miter]
+        [0 + miter, this.width - miter],
+        [0 + miter, this.height - miter]
       ]
     },
 
@@ -116,16 +130,58 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
           break
       }
       return Vec2(
-        util.rand.int(this.options.width - bx),
-        util.rand.int(this.options.height - by)
+        util.rand.int(this.width - bx),
+        util.rand.int(this.height - by)
       )
     },
 
     center: function() {
       return Vec2(
-        Math.floor(this.options.width / 2),
-        Math.floor(this.options.height / 2)
+        Math.floor(this.width / 2),
+        Math.floor(this.height / 2)
       )
+    },
+
+    /*
+    repulsionForce: function (obj) {
+      var maxForce, k, xxa, xxb, xya, xyb, fxa, fxb, fya, fyb
+      // force pushed on an object if it ends up getting so close that it
+      // touches the border of the canvas
+      maxForce = 20
+      // not sure how to describe this number, but it affects the
+      // acceleration curve over time - the smaller the number, the faster the
+      // acceleration tapers off as the object backs away from the border;
+      // the larger the number, the sooner the force starts to affect the object
+      // as it gets closer to the border
+      k = 32
+      xxa = newState.pos[0]
+      xxb = this.canvas.width - newState.pos[0]
+      xya = newState.pos[1]
+      xyb = this.canvas.width - newState.pos[1]
+      // I just figured this out with a graphing calculator
+      fxa = maxForce / (((xxa * xxa) / k) + 1)
+      fxb = -maxForce / (((xxb * xxb) / k) + 1)
+      fya = maxForce / (((xya * xya) / k) + 1)
+      fyb = -maxForce / (((xyb * xyb) / k) + 1)
+      return Vec2(fxa + fxb, fya + fyb)
+    },
+    */
+
+    didFixPossibleCollision: function (state) {
+      var result = false
+      if (state.position[0] < 0 || state.position[0] > this.width) {
+        state.position[0] = (state.position[0] < 0) ? 0 : this.width
+        state.velocity[0] = -state.velocity[0]
+        state.acceleration[0] = -state.acceleration[0]
+        result = true
+      }
+      if (state.position[1] < 1 || state.position[1] > this.height) {
+        state.position[1] = (state.position[1] < 1) ? 1 : this.height
+        state.velocity[1] = -state.velocity[1]
+        state.acceleration[1] = -state.acceleration[1]
+        result = true
+      }
+      return result
     },
 
     //---
@@ -133,8 +189,8 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     _startTimer: function() {
       var _this = this
       // TODO: This should subtract time paused or something...
-      this.startTime = (new Date()).getTime()
-      this.gameTime = 0
+      this.startTime = this.lastTickTime = (new Date()).getTime()
+      this.timeSinceLastUpdate = 0
       this.loop()
     },
 
@@ -144,7 +200,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     },
 
     _clear: function() {
-      this.ctx.clearRect(0, 0, this.options.width, this.options.height)
+      this.ctx.clearRect(0, 0, this.width, this.height)
       if (this.options.debug) this._clearDebug()
     },
 
@@ -205,8 +261,8 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     _addCanvas: function () {
       this.$canvasElement = $('<canvas id="canvas"></canvas>')
         .attr({
-          width: this.options.width,
-          height: this.options.height
+          width: this.width,
+          height: this.height
         })
       this.$wrapperElement.append(this.$canvasElement)
     },

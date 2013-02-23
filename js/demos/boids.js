@@ -12,10 +12,12 @@
         this.index = options.index
       },
 
-      setVel: function() {
-        uber.setVel.call(this)
-        this.parent.applyRulesTo(this)
-        collision.applyTo(this.canvas, this)
+      update: function (t, dt) {
+        this.boidAcc = this.parent.calculateBoidAcc(boid)
+      },
+
+      accelerationAt: function(newState, t) {
+        this.parent.applyRulesTo(this, newState, t)
       },
 
       render: function() {
@@ -28,6 +30,7 @@
       }
     }
   })
+
   BoidCollection = P(DrawableCollection, function () {
     return {
       sepDistLimit: 50,
@@ -50,9 +53,10 @@
       },
 
       applyRulesTo: function (boid) {
-        this._applyCohesionRule(boid)
-        this._applySeparationRule(boid)
-        this._applyAlignmentRule(boid)
+        var deltaAcc = Vec2(0,0)
+        this._applyCohesionRule(boid, deltaAcc)
+        this._applySeparationRule(boid, deltaAcc)
+        this._applyAlignmentRule(boid, deltaAcc)
       },
 
       // Cohesion: Boids try to fly towards the center of mass of neighboring
@@ -62,23 +66,33 @@
       // because when a boid is trying to figure out where the center is,
       // though, it's not going to include itself (since it can't see itself).
       //
-      _applyCohesionRule: function (boid) {
-        var v, i, len, j
-        v = Vec2(0,0)
-        // TODO: Only consider nearest objects
-        for (i = 0, j = 0, len = this.objects.length; i < len; i++) {
-          if (this.objects[i] === boid) continue
-          Vec2.add(v, this.objects[i].pos)
-          j++
+      _applyCohesionRule: function (boid, deltaAcc) {
+        var i, len, numNearBoids, v, w, dist
+        // Calculate the center of nearby boids
+        i = 0
+        j = 0
+        len = this.objects.length
+        numNearBoids = 0
+        w = Vec2(0,0)
+        while (i < len) {
+          v = Vec2(0,0)
+          if (this.objects[i] !== boid) {
+            Vec2.sub(boid.pos, this.objects[i].pos, v)
+            dist = Vec2.mag(v)
+            if (v <= 40) {
+              Vec2.add(w, this.objects[i].pos)
+              numNearBoids++
+            }
+          }
+          i++
         }
-        // The avg is the centroid
-        Vec2.div(v, j)
+        Vec2.div(w, numNearBoids)
         // The diff is the line pointing from me to the centroid
-        Vec2.sub(v, boid.pos)
+        Vec2.sub(w, boid.pos)
         // So, my displacement vector is a small movement toward the centroid
-        Vec2.div(v, 100)
+        Vec2.div(w, 100)
         // Apply the rule
-        Vec2.add(boid.vel, v)
+        Vec2.add(deltaAcc, w)
       },
 
       // Separation: Boids try to keep a small distance away from other objects

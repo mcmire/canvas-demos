@@ -6,19 +6,19 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
     init: function(parent, opts) {
       uber.init.call(this, parent)
       this.setOptions(opts)
-      if (this.mass == null) this.mass = this.defaultMass()
-      if (this.pos == null) this.pos = this.defaultPosition()
-      if (this.vel == null) this.vel = this.defaultVelocity()
-      if (this.color == null) this.color = this.defaultColor()
+      if (this.color == null) { this.color = 'black' }
+      this.resetCounters()
+    },
+
+    resetCounters: function () {
+      this.timeSinceLastUpdate = 0
+      this.forceUpdate = false
     },
 
     setOptions: function(opts) {
       this.options = opts
-      this.mass = opts.mass
-      this.width = opts.width
-      this.height = opts.height
-      this.pos = opts.pos
-      this.vel = opts.vel
+      this.prevState = State(opts)
+      this.currState = null
       this.color = opts.color
     },
 
@@ -30,29 +30,57 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
       this.parent.resumeDrawingObject(this)
     },
 
-    update: function (t, dt) {
-      integrator.advance(this, t, dt)
-      // TODO: check for collisions
-    },
-
-    render: function() {
-      //this.clear()
-      // do more here in a subclass
-    },
-
-    // This is called by the integrator
-    accelerationAt: function (state, t) {
-      return Vec2(0,0)
-    },
-
     clear: function () {
       this.ctx.clearRect(
-        Math.ceil(this.pos[0]-(this.width/2))-1,
-        Math.ceil(this.pos[1]-(this.height/2))-1,
-        this.width+1,
-        this.height+1
+        Math.ceil(this.prevState.position[0] - (this.width / 2)) - 1,
+        Math.ceil(this.prevState.position[1] - (this.height / 2)) - 1,
+        this.width + 1,
+        this.height + 1
       )
     },
+
+    update: function (tickElapsedTime, timeStep) {
+      this.timeSinceLastUpdate += tickElapsedTime
+      while (this.forceUpdate || this.timeSinceLastUpdate >= timeStep) {
+        // Catch the simulation up for as many timesteps as we are behind
+        // (hopefully only 1).
+        // Keep in mind the state calculated here for each object will not be
+        // fully rendered until the next update arrives and it's time to
+        // calculate another step.
+        this.prevState = Vec2.clone(this.currState)
+        rk2Integrator.advance(this.currState, timeStep)
+        this.timeSinceLastUpdate -= timeStep
+        this.forceUpdate = false
+      }
+    },
+
+    render: function(timeStep) {
+      var alpha = this.timeSinceLastUpdate / timeStep
+      this.interpState = this._getInterpolatedState(alpha)
+      // TODO........
+      if (this.canvas.didFixPossibleCollision(this.interpState)) {
+        // force update
+        this.currState = this.interpState
+        this.forceUpdate = true
+      }
+      this.draw()
+    },
+
+    draw: function () {
+      throw "Must be implemented in a subclass"
+    },
+
+    // This is called by the integrator. It should return an object with two
+    // keys: 'force' (a vector) and 'torque' (a number).
+    //
+    calculateForces: function (currState, t) {
+      return {
+        force: Vec2(0,0),
+        torque: 0
+      }
+    },
+
+    //---
 
     getBounds: function (pos) {
       this.getBoundsAt(this.pos)
@@ -67,27 +95,25 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
       ]
     },
 
-    defaultPosition: function() {
-      return Vec2(0,0)
-    },
-
-    defaultVelocity: function() {
-      return Vec2(0,0)
-    },
-
-    defaultMass: function () {
-      return 1
-    },
-
-    defaultColor: function() {
-      return "black"
-    },
-
     randomVector: function(def) {
       return Vec2(
         util.rand.int(def, def),
         util.rand.int(def, def)
       )
+    }
+
+    _getInterpolatedState: function (alpha) {
+      var a = this.prevState,
+          b = this.currState,
+          i = State()
+
+      i.position = Vec2.lerp(a.position, b.position, alpha)
+      i.momentum = Vec2.lerp(a.momentum, b.momentum, alpha)
+      i.orientation = util.math.lerp(a.orientation, b.orientation, alpha)
+      i.angularMomentum = util.math.lerp(a.angularMomentum, b.angularMomentum, alpha)
+      i.recalculate()
+
+      return i
     }
   }
 })

@@ -2,10 +2,15 @@
 'use strict';
 
 window.util = (function () {
-  var util = {},
+  var math = {},
+      util = {},
       rand = {},
       arr = {},
       fn = {}
+
+  math.lerp = function (v1, v2, alpha) {
+    return (v1 * (1 - alpha)) + (v2 * alpha)
+  }
 
   // Return a number from 0..max, or min..max
   // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Math/random
@@ -33,6 +38,7 @@ window.util = (function () {
     return $.v.reduce(array, function(s,v) { s += v; s }, 0)
   }
 
+  util.math = math
   util.rand = rand
   util.arr = arr
   util.fn = fn

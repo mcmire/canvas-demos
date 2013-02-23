@@ -7,12 +7,12 @@
   repulsion = {
     // TODO
     applyTo: function (canvas, obj) {
-      var bb, ob, f, newvel, k, dxa, dxb, dya, dyb, velslope, extra, xr, newpos
+      var bb, ob, f, newvel, q, dxa, dxb, dya, dyb, velslope, extra, xr, newpos
 
       // Smooth repulsion:
-      // * at |x - p| = k, factor = 0
-      // * at |x - p| = 0, factor = 1
-      // So, factor for x direction is ((k - |x - p|) / k)
+      // * at |a - b| = q, factor = 0
+      // * at |a - b| = 0, factor = 1
+      // So, factor for x direction is ((q - |a - b|) / q)
 
       // Calculate new displacement
 
@@ -20,7 +20,7 @@
       ob = obj.getBounds()                // Object bounds
       f = 0.5
       newvel = obj.vel.slice(0)
-      k = 30
+      q = 30
 
       // The distance the object is past the bound
       dxa = Math.abs(ob[0][0] - bb[0][0])
@@ -31,31 +31,31 @@
 
       // Modify the velocity by the amount the object is near the bound.
       // The closer the object is to the bound (and, technically, the further it is past the
-      // "safe area" which is designated by k), the further it's pushed away.
+      // "safe area" which is designated by q), the further it's pushed away.
       // As long as the object is near the bound, it's continually pushed away, and the
       // effect is that it eventually changes direction.
       //
       // FIXME: The problem with this is that when the object exits the force field it doesn't
       // quite return to its original velocity... also the force field may push with a bigger
       // force than the object itself
-      if (dxa < k) {
-        extra = ((k - dxa) / k)
+      if (dxa < q) {
+        extra = ((q - dxa) / q)
         xr = f * extra
         newvel[0] += xr
       }
-      if (dxb < k) {
-        extra = ((k - dxb) / k)
+      if (dxb < q) {
+        extra = ((q - dxb) / q)
         xr = f * extra
-        debug("extra: ((" + k + " - " + dxb + ") / " + k + ") = " + extra)
+        debug("extra: ((" + q + " - " + dxb + ") / " + q + ") = " + extra)
         newvel[0] -= xr
       }
-      if (dya < k) {
-        extra = ((k - dya) / k)
+      if (dya < q) {
+        extra = ((q - dya) / q)
         yr = f * extra
         newvel[1] += yr
       }
-      if (dyb < k) {
-        extra = ((k - dyb) / k)
+      if (dyb < q) {
+        extra = ((q - dyb) / q)
         yr = f * extra
         newvel[1] -= yr
       }
@@ -74,15 +74,15 @@
       },
 
       accelerationAt: function(obj, t) {
-        var k, b, acc, spring, diff
-        k = 32
+        var q, b, acc, spring, diff
+        q = 32
         b = 1
         acc = Vec2(0,0)
         spring = Vec2(200,170)
         diff = Vec2(0,0)
         Vec2.sub(spring, obj.pos, diff)
-        acc[0] = k * (diff[0] / this.mass) - b * obj.vel[0]
-        acc[1] = k * (diff[1] / this.mass) - b * obj.vel[1]
+        acc[0] = q * (diff[0] / this.mass) - b * obj.vel[0]
+        acc[1] = q * (diff[1] / this.mass) - b * obj.vel[1]
         //console.log(JSON.stringify({acc: acc}))
         return acc
       },

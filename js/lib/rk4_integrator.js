@@ -1,5 +1,5 @@
 
-'use strict'
+'use strict';
 
 // The goal here is to figure out the next values of velocity and position using
 // the current acceleration. We would also like to make acceleration a function
@@ -192,42 +192,64 @@
 // [1]: http://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods
 // [2]: http://gafferongames.com/game-physics/integration-basics
 //
-window.rk4Integrator = {
-  advance: function (obj, t, dt) {
-    var k1, k2, k3, k4, dPos, dVel
+window.rk4Integrator = $.v.extend(rkIntegrator, {
+  advance: function (state, dt) {
+    var k1, k2, k3, k4
 
-    k1 = this.rkStep(obj, t, 0, {dPos: Vec2(0,0), dVel: Vec2(0,0)})
-    k2 = this.rkStep(obj, t, 0.5*dt, k1)
-    k3 = this.rkStep(obj, t, 0.5*dt, k2)
-    k4 = this.rkStep(obj, t, dt, k3)
+    k1 = this.rkStep(state, 0)
+    k2 = this.rkStep(state, 0.5*dt, k1)
+    k3 = this.rkStep(state, 0.5*dt, k2)
+    k4 = this.rkStep(state, dt, k3)
 
-    dPos = Vec2(0,0)
-    dPos[0] = (k1.dPos[0] + 2 * k2.dPos[0] + 2 * k3.dPos[0] + k4.dPos[0]) / 6
-    dPos[1] = (k1.dPos[1] + 2 * k2.dPos[1] + 2 * k3.dPos[1] + k4.dPos[1]) / 6
-    dVel = Vec2(0,0)
-    dVel[0] = (k1.dVel[0] + 2 * k2.dVel[0] + 2 * k3.dVel[0] + k4.dVel[0]) / 6
-    dVel[1] = (k1.dVel[1] + 2 * k2.dVel[1] + 2 * k3.dVel[1] + k4.dVel[1]) / 6
+    // We are just rearranging the terms here to make the code prettier,
+    // but the general format is this:
+    //
+    //   state.x += (k1.dx + 2 * k2.dx + 2 * k3.dx + k4.dx) / 6 * dt
+    //
+    // or, simplified:
+    //
+    //   state.x += dx * dt
 
-    obj.pos[0] += dPos[0] * dt
-    obj.pos[1] += dPos[1] * dt
-    obj.vel[0] += dVel[0] * dt
-    obj.vel[1] += dVel[1] * dt
-  },
+    state.position[0] += 1/6 * dt * (
+      k1.velocity[0] +
+      2 * k2.velocity[0] +
+      2 * k3.velocity[0] +
+      k4.velocity[0]
+    )
+    state.position[1] += 1/6 * dt * (
+      k1.velocity[1] +
+      2 * k2.velocity[1] +
+      2 * k3.velocity[1] +
+      k4.velocity[1]
+    )
 
-  rkStep: function (obj, t, dt, d) {
-    var state, deriv
+    state.momentum[0] += 1/6 * dt * (
+      k1.force[0] +
+      2 * k2.force[0] +
+      2 * k3.force[0] +
+      k4.force[0]
+    )
+    state.momentum[1] += 1/6 * dt * (
+      k1.force[1] +
+      2 * k2.force[1] +
+      2 * k3.force[1] +
+      k4.force[1]
+    )
 
-    state = {pos: Vec2(0,0), vel: Vec2(0,0)}
-    state.pos[0] = obj.pos[0] + d.dPos[0] * dt
-    state.pos[1] = obj.pos[1] + d.dPos[1] * dt
-    state.vel[0] = obj.vel[0] + d.dVel[0] * dt
-    state.vel[1] = obj.vel[1] + d.dVel[1] * dt
+    state.orientation += 1/6 * dt * (
+      k1.angularVelocity +
+      2 * k2.angularVelocity +
+      2 * k3.angularVelocity +
+      k4.angularVelocity
+    )
+    state.angularMomentum += 1/6 * dt * (
+      k1.torque +
+      2 * k2.torque +
+      2 * k3.torque +
+      k4.torque
+    )
 
-    deriv = {}
-    deriv.dPos = state.vel
-    deriv.dVel = obj.accelerationAt(state, t + dt)
-
-    return deriv
+    state.recalculate()
   }
-}
+})
 
