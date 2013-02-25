@@ -9,6 +9,13 @@ window.CanvasObjectCollection = P(Drawable, function (proto, uber) {
       this.hiddenObjects = []
     },
 
+    handleInput: function () {
+      var i, len
+      for (i = 0, len = this.objects.length; i < len; i++) {
+        this.objects[i].handleInput()
+      }
+    },
+
     update: function (t, dt) {
       var i, len
       for (i = 0, len = this.objects.length; i < len; i++) {

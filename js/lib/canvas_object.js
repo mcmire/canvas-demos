@@ -6,7 +6,7 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
     init: function(parent, opts) {
       uber.init.call(this, parent)
       this.setOptions(opts)
-      if (this.color == null) { this.color = 'black' }
+      if (!this.color) { this.color = 'black' }
       this.resetCounters()
     },
 
@@ -17,9 +17,13 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
 
     setOptions: function(opts) {
       this.options = opts
-      this.prevState = State(opts)
-      this.currState = null
+
+      this.width = opts.width
+      this.height = opts.height
       this.color = opts.color
+
+      this.prevState = null
+      this.currState = State(opts)
     },
 
     stopDrawing: function() {
@@ -30,10 +34,16 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
       this.parent.resumeDrawingObject(this)
     },
 
+    handleInput: function () {
+    },
+
     clear: function () {
+      var pos
+      if (!this.prevState) { return }
+      pos = Vec2.rotate(this.prevState.position, this.prevState.orientation)
       this.ctx.clearRect(
-        Math.ceil(this.prevState.position[0] - (this.width / 2)) - 1,
-        Math.ceil(this.prevState.position[1] - (this.height / 2)) - 1,
+        Math.ceil(pos[0] - (this.width / 2)) - 1,
+        Math.ceil(pos[1] - (this.height / 2)) - 1,
         this.width + 1,
         this.height + 1
       )
@@ -41,28 +51,32 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
 
     update: function (tickElapsedTime, timeStep) {
       this.timeSinceLastUpdate += tickElapsedTime
-      while (this.forceUpdate || this.timeSinceLastUpdate >= timeStep) {
+      //while (this.forceUpdate || this.timeSinceLastUpdate >= timeStep) {
+      if (this.timeSinceLastUpdate >= timeStep) {
         // Catch the simulation up for as many timesteps as we are behind
         // (hopefully only 1).
         // Keep in mind the state calculated here for each object will not be
         // fully rendered until the next update arrives and it's time to
         // calculate another step.
-        this.prevState = Vec2.clone(this.currState)
-        rk2Integrator.advance(this.currState, timeStep)
-        this.timeSinceLastUpdate -= timeStep
-        this.forceUpdate = false
+        var forces = this.calculateForces()
+        symplecticEulerIntegrator.advance(forces, this.currState, timeStep)
+        this.canvas.fixPossibleCollision(this)
+        //this.timeSinceLastUpdate -= timeStep
+        //this.forceUpdate = false
+        //this.prevState = this.currState.clone()
       }
     },
 
     render: function(timeStep) {
-      var alpha = this.timeSinceLastUpdate / timeStep
-      this.interpState = this._getInterpolatedState(alpha)
-      // TODO........
-      if (this.canvas.didFixPossibleCollision(this.interpState)) {
-        // force update
-        this.currState = this.interpState
-        this.forceUpdate = true
-      }
+      ///var alpha = this.timeSinceLastUpdate / timeStep
+      ///this.interpState = this._getInterpolatedState(alpha)
+      ///// TODO........
+      ///if (this.canvas.didFixPossibleCollision(this.interpState)) {
+      ///  // force update
+      ///  this.currState = this.interpState
+      ///  this.forceUpdate = true
+      ///}
+      this.interpState = this.currState
       this.draw()
     },
 
@@ -73,7 +87,7 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
     // This is called by the integrator. It should return an object with two
     // keys: 'force' (a vector) and 'torque' (a number).
     //
-    calculateForces: function (currState, t) {
+    calculateForces: function (state) {
       return {
         force: Vec2(0,0),
         torque: 0
@@ -100,7 +114,7 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
         util.rand.int(def, def),
         util.rand.int(def, def)
       )
-    }
+    },
 
     _getInterpolatedState: function (alpha) {
       var a = this.prevState,

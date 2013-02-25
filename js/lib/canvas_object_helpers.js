@@ -25,20 +25,23 @@
 // moment of inertia, then integrate angular velocity to get orientation.
 
 window.State = P(function () {
+  var VECTORS = ['position', 'momentum'],
+      SCALARS = ['forceAmount', 'velocity', 'orientation', 'angularMomentum', 'torque', 'mass', 'rotationalInertia'],
+      PROPERTIES = VECTORS.concat(SCALARS)
+
   return {
     init: function (state) {
-      var vectors, scalars
+      var _this = this
 
       if (!state) state = {}
 
-      vectors = ['position', 'momentum']
-      scalars = ['orientation', 'angularMomentum', 'mass', 'rotationalInertia']
-
-      $.v.each(vectors, function (key) {
-        if (!(key in state)) state[key] = Vec2()
+      $.v.each(VECTORS, function (key) {
+        _this[key] = (key in state) ? state[key] : Vec2()
       })
-      $.v.each(scalars, function (key) {
-        if (!(key in state)) state[key] = 0
+      $.v.each(SCALARS, function (key) {
+        _this[key] = (key in state)
+          ? state[key]
+          : (key === 'mass' || key === 'rotationalInertia') ? 1 : 0
       })
 
       this.recalculate()
@@ -47,6 +50,15 @@ window.State = P(function () {
     recalculate: function () {
       this.velocity = Vec2.ndiv(this.momentum, this.mass)
       this.angularVelocity = this.angularMomentum / this.rotationalInertia
+    },
+
+    clone: function () {
+      var _this = this,
+          state = new State()
+      $.v.each(PROPERTIES, function (key) {
+        state[key] = _this[key]
+      })
+      return state
     }
   }
 })

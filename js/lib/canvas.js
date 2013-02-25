@@ -22,33 +22,33 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this.ctx = this.$canvasElement[0].getContext('2d')
       this.secondsPerTick = 1 / this.ticksPerSecond
 
+      this.keyboard = keyboard.init()
+
       ;(function (_this) {
         var timeStep, loop, tick
 
         timeStep = _this.secondsPerTick
 
         loop = function () {
-          ///tick()
+          tick()
           if (_this.isRunning) {
             _this.timer = requestAnimFrame(loop)
           }
         }
 
         tick = function () {
-          var t, tickElapsedTime, alpha
+          var t, tickElapsedTime
           t = (new Date()).getTime()
           tickElapsedTime = t - _this.lastTickTime
           // Cap this to avoid "spiral of death".
           // (Honestly not sure why this is 250ms? A magic number if I ever saw one)
           if (tickElapsedTime > 250) { tickElapsedTime = 250 }
 
-          _this.timeSinceLastUpdate += tickElapsedTime
-          _this.objects.clear()
-          while (_this.timeSinceLastUpdate >= timeStep) {
-            _this.objects.update(tickElapsedTime, timeStep)
-            _this.timeSinceLastUpdate -= timeStep
-          }
+          _this.ctx.clearRect(0, 0, _this.width, _this.height)
+          //_this.objects.clear()
+          _this.objects.update(tickElapsedTime, timeStep)
           _this.objects.render(timeStep)
+
           _this.lastTickTime = t
         }
 
@@ -62,6 +62,10 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       objects = cons(this)
       this.objects = objects
       return objects
+    },
+
+    addEvents: function () {
+      this.keyboard.addEvents()
     },
 
     start: function() {
@@ -167,21 +171,37 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     },
     */
 
-    didFixPossibleCollision: function (state) {
-      var result = false
-      if (state.position[0] < 0 || state.position[0] > this.width) {
-        state.position[0] = (state.position[0] < 0) ? 0 : this.width
-        state.velocity[0] = -state.velocity[0]
-        state.acceleration[0] = -state.acceleration[0]
-        result = true
+    fixPossibleCollision: function (obj) {
+      var state = obj.currState,
+          mom = state.momentum,
+          vel = state.velocity,
+          pos = state.position,
+          w = this.width,
+          h = this.height,
+          ohw = obj.width / 2,
+          ohh = obj.height / 2,
+          leftEdge = pos[0] - ohw,
+          rightEdge = pos[0] + ohw,
+          topEdge = pos[1] - ohh,
+          bottomEdge = pos[1] + ohh,
+          hitLeft = (leftEdge < 0),
+          hitRight = (rightEdge > w),
+          hitTop = (topEdge < 0),
+          hitBottom = (bottomEdge > h),
+          fixed = false
+      if (hitLeft || hitRight) {
+        pos[0] = hitLeft ? ohw : (w - ohw)
+        vel[0] = -vel[0]
+        mom[0] = -mom[0]
+        fixed = true
       }
-      if (state.position[1] < 1 || state.position[1] > this.height) {
-        state.position[1] = (state.position[1] < 1) ? 1 : this.height
-        state.velocity[1] = -state.velocity[1]
-        state.acceleration[1] = -state.acceleration[1]
-        result = true
+      if (hitTop || hitBottom) {
+        pos[1] = hitTop ? ohh : (h - ohh)
+        vel[1] = -vel[1]
+        mom[1] = -mom[1]
+        fixed = true
       }
-      return result
+      return fixed
     },
 
     //---

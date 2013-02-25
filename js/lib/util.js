@@ -1,6 +1,9 @@
 
 'use strict';
 
+// not sure where else this goes
+Math.TAU = Math.PI * 2
+
 window.util = (function () {
   var math = {},
       util = {},
@@ -10,6 +13,12 @@ window.util = (function () {
 
   math.lerp = function (v1, v2, alpha) {
     return (v1 * (1 - alpha)) + (v2 * alpha)
+  }
+
+  math.floor = function (v, minValue) {
+    if (v > 0 && v <= minValue) { v = 0 }
+    if (v < 0 && v >= -minValue) { v = 0 }
+    return v
   }
 
   // Return a number from 0..max, or min..max
@@ -45,3 +54,20 @@ window.util = (function () {
 
   return util
 })()
+
+window.PeriodicLogger = P(function (proto) {
+  proto.init = function () {
+    this.reset()
+  }
+  proto.reset = function () {
+    this.timeLastLogged = (new Date()).getTime()
+  }
+  proto.log = function (obj) {
+    var t = (new Date()).getTime()
+    if ((t - this.timeLastLogged) >= 1000) {
+      console.log(obj)
+      this.reset()
+    }
+  }
+})
+

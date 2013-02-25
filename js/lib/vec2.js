@@ -14,10 +14,22 @@ window.Vec2 = (function () {
     }
   }
 
+  Vec2.fromPolarCoords = function (mag, angle) {
+    var x = mag * Math.cos(angle),
+        y = mag * Math.sin(angle)
+    return Vec2(x, y)
+  }
+
+  Vec2.toPolarCoords = function (v) {
+    var mag = Vec2.mag(v),
+        angle = Vec2.angle(v)
+    return [mag, angle]
+  }
+
   function defop1(/* names..., fn */) {
     var names, outFn, regFn, newFn
-    names = Array.prototype.slice(arguments)
-    outFn = args.pop()
+    names = Array.prototype.slice.call(arguments)
+    outFn = names.pop()
     regFn = function (v) {
       outFn(v, v)
     }
@@ -35,10 +47,11 @@ window.Vec2 = (function () {
       Vec2["n" + name] = newFn
     })
   }
+
   function defop2(/* names..., fn */) {
     var names, outFn, regFn, newFn
-    names = Array.prototype.slice(arguments)
-    outFn = args.pop()
+    names = Array.prototype.slice.call(arguments)
+    outFn = names.pop()
     regFn = function (v, x) {
       outFn(v, x, v)
     }
@@ -103,13 +116,13 @@ window.Vec2 = (function () {
   // Operations on one vector
 
   defop2('mul', function (v, s, out) {
-    out[0] = v1[0] * s
-    out[1] = v1[1] * s
+    out[0] = v[0] * s
+    out[1] = v[1] * s
   })
 
   defop2('div', function (v, s, out) {
-    out[0] = v1[0] / s
-    out[1] = v1[1] / s
+    out[0] = v[0] / s
+    out[1] = v[1] / s
   })
 
   defop1('invert', 'inv', function (v, out) {
@@ -123,17 +136,22 @@ window.Vec2 = (function () {
     out[1] = v[0]
   })
 
-  defop1('unit', function (v, out) {
-    // ...
+  defop1('unit', 'norm', function (v, out) {
+    // ... ?
   })
 
   // linear interpolation
   Vec2.lerp = function (v1, v2, alpha) {
     return Vec2(
       util.math.lerp(v1[0], v2[0], alpha),
-      util.math.lerp(v1[1], v2[1], alpha),
+      util.math.lerp(v1[1], v2[1], alpha)
     )
   }
+
+  defop2('floor', function (v, minValue, out) {
+    out[0] = util.math.floor(v[0], minValue)
+    out[1] = util.math.floor(v[1], minValue)
+  })
 
   // Calculations on one vector
 

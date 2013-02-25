@@ -41,15 +41,19 @@ $.v.extend(Canvas.prototype, {
   },
 
   triangle: function(x, y, w, h, options) {
-    var options
-    options = $.v.extend({}, options, {
-      origin: [x, y],
-      coords: [[x, y]]
-    })
-    this.configurePath(options, function(o) {
-      this.ctx.moveTo(o.origin[0] - (w / 2), o.origin[1] - (h / 2))
-      this.ctx.lineTo(o.origin[0] - (w / 2), o.origin[1] + (h / 2))
-      this.ctx.lineTo(o.origin[0] + (w / 2), o.origin[1]          )
+    this.withinState(function () {
+      this.ctx.translate(x, y)
+      if (options.rotate) { this.ctx.rotate(options.rotate) }
+      this.withinPath(function () {
+        // point to the right
+        this.ctx.moveTo(-(w / 2), -(h / 2))
+        this.ctx.lineTo(-(w / 2), (h / 2))
+        this.ctx.lineTo((w / 2), 0)
+      })
+      if (options.fill) {
+        this.ctx.fillStyle = options.fill
+        this.ctx.fill()
+      }
     })
   },
 
@@ -89,7 +93,7 @@ $.v.extend(Canvas.prototype, {
     args.reverse()
     callback = args[0], options = args[1]
     if (!options) options = {}
-    //options = this.applyRotation(options || {})
+    options = this.applyRotation(options)
 
     if (options.fill) { action = "fill"; color = options.fill }
     if (options.stroke) { action = "stroke"; color = options.stroke }
@@ -104,8 +108,12 @@ $.v.extend(Canvas.prototype, {
   configureShape: function (options, callback) {
     if (options.rotate || options.translate) {
       this.withinState(function() {
-        if (options.translate) this.ctx.translate.apply(this.ctx, options.translate)
-        if (options.rotate) this.ctx.rotate(options.rotate)
+        if (options.translate) {
+          this.ctx.translate.apply(this.ctx, options.translate)
+        }
+        if (options.rotate != null) {
+          this.ctx.rotate(options.rotate)
+        }
         this.withinPath(callback, options)
       })
     } else {
@@ -123,7 +131,7 @@ $.v.extend(Canvas.prototype, {
     // Both rotate and translate cannot be given
     if (!options.rotate || options.translate) return options
 
-    for (i = 0, len = options.coords; i < len; i++) {
+    for (i = 0, len = options.coords.length; i < len; i++) {
       options.coords[i][0] -= options.origin[0]
       options.coords[i][1] -= options.origin[1]
     }

@@ -2,54 +2,49 @@
 'use strict';
 
 (function() {
-  var Projectile, canvas, canvasObjects
+  var keyTracker, Projectile, canvas, canvasObjects
+
+  keyTracker = keyboard.KeyTracker(
+    $.v.map(['KEY_LEFT', 'KEY_RIGHT', 'KEY_UP', 'KEY_DOWN'], function (key) {
+      return keyboard.keys[key]
+    })
+  )
 
   Projectile = P(CanvasObject, function (proto, uber, klass) {
-    klass.maxSpeed = 5
+    var periodicLogger = PeriodicLogger()
     return {
-      setOptions: function (opts) {
-        uber.setOptions.apply(this, arguments)
-        this.vel = Vec2(3,0)
-        this.pos = Vec2(200,200)
-      },
+      calculateForces: function () {
+        var state = this.currState,
+            forces = {force: Vec2(0,0), torque: 0}
 
-      calculateForces: function (nextState, t) {
-        var values = {},
-            linearForce,
-            angularForce,
-            forceAmount = 0.3,
-            forceDampening = 0.1,
-            torqueAmount = 0.3,
-            torqueDampening = 0.1
+        // It is important that force and torque are calculated fresh every
+        // iteration. They cannot persist across iterations because then
+        // we would have to apply the dampening logic per iteration. This does
+        // not work b/c it creates a wobbling effect (where force + velocity and
+        // torque + angularVelocity will circle each other)
 
-        linearForce = Vec2()
-        if (keyboard.keyIsPressed('UP')) {
-          linearForce += forceAmount
+        if (keyboard.isTrackedKeyPressed('KEY_UP')) {
+          forces.force = Vec2.fromPolarCoords(30, state.orientation)
         }
-        // apply viscous damper force  (from F = kx - cv)
-        // XXX: don't we want to damp velocity and not force?
-        linearForce -= Vec2.mul(nextState.velocity, forceDampening)
-        if (linearForce < 0.001) {
-          linearForce = 0
+        if (keyboard.isTrackedKeyPressed('KEY_LEFT')) {
+          forces.torque = -0.4
+          Vec2.add(forces.force, Vec2.fromPolarCoords(4, state.orientation + Math.TAU / 16))
+        } else if (keyboard.isTrackedKeyPressed('KEY_RIGHT')) {
+          forces.torque = 0.4
+          Vec2.add(forces.force, Vec2.fromPolarCoords(4, state.orientation - Math.TAU / 16))
         }
 
-        angularForce = 0
-        if (keyboard.keyIsPressed('LEFT')) {
-          angularForce += torqueAmount
-        } else if (keyboard.keyIsPressed('RIGHT')) {
-          angularForce -= torqueAmount
-        }
-        // apply viscous damper force  (from F = kx - cv)
-        // XXX: don't we want to damp velocity and not force?
-        angularForce -= Vec2.mul(nextState.angularVelocity, torqueDampening)
-        if (angularForce < 0.001) {
-          angularForce = 0
-        }
+        // apply viscous damper force in the opposite direction
+        // (from F = kx - cv)
+        Vec2.sub(forces.force, Vec2.nmul(state.velocity, 0.35))
+        Vec2.floor(forces.force, 0.001)
 
-        values.torque = angularForce
-        values.force = Vec2.rotate(Vec2(linearForce, 0), angularForce)
+        // apply viscous damper force in the opposite direction
+        // (from F = kx - cv)
+        forces.torque -= (state.angularVelocity * 0.35)
+        forces.torque = util.math.floor(forces.torque, 0.001)
 
-        return values
+        return forces
       },
 
       draw: function () {
@@ -73,12 +68,15 @@
   })
   canvasObjects = canvas.buildObjectCollection(CanvasObjectCollection)
   canvasObjects.addObject(Projectile, {
-    width: 8,
-    height: 6,
-    position: Vec2(canvas.height - 6),
-    orientation: (Math.PI / 2),
-    gravity: false
+    width: 15,
+    height: 12,
+    position: Vec2(canvas.width / 2, canvas.height / 2),
+    orientation: -(Math.TAU / 4),
+    //hasGravity: false
   })
+
+  canvas.keyboard.addKeyTracker(keyTracker)
+  canvas.addEvents()
 
   window.canvas = canvas
 })()
