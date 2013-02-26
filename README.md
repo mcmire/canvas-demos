@@ -22,3 +22,9 @@ Perp dot product: v1.mag * v2.mag * sin(theta)
 * http://www.codezealot.org/archives/88
 * http://www.codezealot.org/archives/153
 * http://research.ncl.ac.uk/game/mastersdegree/gametechnologies/
+
+## Code style
+
+Returning to JavaScript for this one. I know JavaScript is not as "cool" as
+CoffeeScript but honestly I don't see a reason anymore for using it. JavaScript
+works just great.

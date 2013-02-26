@@ -26,17 +26,24 @@ $.v.extend(Canvas.prototype, {
   },
 
   rect: function (x, y, w, h, options) {
-    var options
-    options = $.v.extend({}, options, {
-      origin: [x, y],
-      coords: [[x, y]]
-    })
-    this.configurePath(options, function(o) {
-      this.ctx.moveTo(o.origin[0], o.origin[1])
-      this.ctx.lineTo(o.origin[0]+w, o.origin[1])
-      this.ctx.lineTo(o.origin[0]+w, o.origin[1]+h)
-      this.ctx.lineTo(o.origin[0], o.origin[1]+h)
-      this.ctx.lineTo(o.origin[0], o.origin[1])
+    this.withinState(function () {
+      this.ctx.translate(x, y)
+      if (options.rotate) { this.ctx.rotate(options.rotate) }
+      this.withinPath(function () {
+        this.ctx.moveTo(-w/2, -h/2)
+        this.ctx.lineTo(w/2, -h/2)
+        this.ctx.lineTo(w/2, h/2)
+        this.ctx.lineTo(-w/2, h/2)
+        this.ctx.lineTo(-w/2, -h/2)
+      })
+      if (options.fill) {
+        this.ctx.fillStyle = options.fill
+        this.ctx.fill()
+      }
+      if (options.stroke) {
+        this.ctx.strokeStyle = options.stroke
+        this.ctx.stroke()
+      }
     })
   },
 

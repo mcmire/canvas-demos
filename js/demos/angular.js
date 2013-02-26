@@ -2,12 +2,22 @@
 'use strict';
 
 (function() {
-  var keys, keyTracker, Ship, Projectile, canvas, canvasObjects
+  var keys, keyTracker, Plank, Ship, Projectile, canvas, canvasObjects
 
   keys = ['KEY_LEFT', 'KEY_RIGHT', 'KEY_UP', 'KEY_DOWN', 'KEY_SPACE']
   keyTracker = keyboard.KeyTracker($.v.map(keys, function (key) {
     return keyboard.keys[key]
   }))
+
+  Plank = P(CanvasObject, function (proto, uber) {
+    proto.draw = function () {
+      var state = this.interpState
+      this.canvas.rect(state.position[0], state.position[1], this.width, this.height, {
+        rotate: state.orientation,
+        stroke: 'black'
+      })
+    }
+  })
 
   Ship = P(CanvasObject, function (proto, uber, klass) {
     var periodicLogger = PeriodicLogger()
@@ -74,16 +84,22 @@
         } else if (keyboard.isTrackedKeyPressed('KEY_RIGHT')) {
           state.orientation += 0.05
         }
+        if (keyboard.isTrackedKeyPressed('KEY_SPACE') && !this.launchTime) {
+          this.launchTime = (new Date()).getTime()
+          this.hasGravity = true
+        }
       },
 
       calculateForces: function () {
         var state = this.currState,
-            forces = {force: Vec2(0,0), torque: 0}
+            forces = {force: Vec2(0,0), torque: 0},
+            launchTimeElapsed
 
-        if (keyboard.isTrackedKeyPressed('KEY_SPACE')) {
-          this.wasLaunched = true
-          forces.force = Vec2.fromPolarCoords(60, state.orientation)
-          this.hasGravity = true
+        if (this.launchTime) {
+          launchTimeElapsed = (new Date()).getTime() - this.launchTime
+          if (launchTimeElapsed < 1000) {
+            forces.force = Vec2.fromPolarCoords(60, state.orientation)
+          }
         }
 
         if (this.hasGravity) {
@@ -118,6 +134,13 @@
     height: 400
   })
   canvasObjects = canvas.buildObjectCollection(CanvasObjectCollection)
+  canvasObjects.addObject(Plank, {
+    width: 15,
+    height: (canvas.height - 10),
+    position: Vec2((canvas.width / 2) - 100, canvas.height / 2),
+    orientation: -(Math.TAU / 8),
+    hasGravity: false
+  })
   /*
   canvasObjects.addObject(Ship, {
     width: 15,
@@ -130,8 +153,8 @@
   canvasObjects.addObject(Projectile, {
     width: 15,
     height: 12,
-    position: Vec2(canvas.width / 2, canvas.height / 2),
-    orientation: -(Math.TAU / 4),
+    position: Vec2(50, canvas.height - 50),
+    orientation: -(Math.TAU / 8),
     hasGravity: false
   })
 
