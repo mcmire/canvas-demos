@@ -6,7 +6,8 @@ window.keyboard = (function () {
     KEY_UP: 38,
     KEY_DOWN: 40,
     KEY_LEFT: 37,
-    KEY_RIGHT: 39
+    KEY_RIGHT: 39,
+    KEY_SPACE: 32
   }
 
   MODIFIER_KEYS = [
@@ -347,8 +348,9 @@ window.keyboard = (function () {
     //
     // Raises an Error if `key` does not refer to a known key.
     //
-    kb.keyCodeFor = function (key) {
-      var keyCode
+    kb.keyCodeFor = function (givenKey) {
+      var key = givenKey,
+          keyCode
       if (typeof key === 'string') {
         if (!/^KEY_/.test(key)) { key = "KEY_" + key.toUpperCase() }
         keyCode = KEYS[key]

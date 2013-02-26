@@ -189,18 +189,21 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
           hitTop = (topEdge < 0),
           hitBottom = (bottomEdge > h),
           fixed = false
+
       if (hitLeft || hitRight) {
         pos[0] = hitLeft ? ohw : (w - ohw)
         vel[0] = -vel[0]
-        mom[0] = -mom[0]
+        mom[0] = -(mom[0] * 0.65)
         fixed = true
       }
+
       if (hitTop || hitBottom) {
         pos[1] = hitTop ? ohh : (h - ohh)
         vel[1] = -vel[1]
-        mom[1] = -mom[1]
+        mom[1] = -(mom[1] * 0.65)
         fixed = true
       }
+
       return fixed
     },
 

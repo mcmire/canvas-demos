@@ -34,9 +34,6 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
       this.parent.resumeDrawingObject(this)
     },
 
-    handleInput: function () {
-    },
-
     clear: function () {
       var pos
       if (!this.prevState) { return }
@@ -58,12 +55,24 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
         // Keep in mind the state calculated here for each object will not be
         // fully rendered until the next update arrives and it's time to
         // calculate another step.
+        this.handleInput()
         var forces = this.calculateForces()
         symplecticEulerIntegrator.advance(forces, this.currState, timeStep)
         this.canvas.fixPossibleCollision(this)
         //this.timeSinceLastUpdate -= timeStep
         //this.forceUpdate = false
         //this.prevState = this.currState.clone()
+      }
+    },
+
+    handleInput: function () {
+      // do nothing by default
+    },
+
+    calculateForces: function () {
+      return {
+        force: Vec2(0,0),
+        torque: 0
       }
     },
 
@@ -82,16 +91,6 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
 
     draw: function () {
       throw "Must be implemented in a subclass"
-    },
-
-    // This is called by the integrator. It should return an object with two
-    // keys: 'force' (a vector) and 'torque' (a number).
-    //
-    calculateForces: function (state) {
-      return {
-        force: Vec2(0,0),
-        torque: 0
-      }
     },
 
     //---
