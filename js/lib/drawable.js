@@ -3,11 +3,11 @@
 
 window.Drawable = P(function () {
   return {
-    init: function(parent) {
+    init: function (parent) {
       this.setParent(parent)
     },
 
-    setParent: function(parent) {
+    setParent: function (parent) {
       if (!parent) return
       this.parent = parent
       this.canvas = (parent === Canvas || parent instanceof Canvas)
@@ -16,12 +16,12 @@ window.Drawable = P(function () {
       this.ctx = this.canvas.ctx
     },
 
-    update: function() {
-      throw new Error("You need to implement Drawable#update")
+    update: function (tickElapsedTime, timeStep) {
+      throw new Error("You need to implement #update for your subclass of Drawable")
     },
 
-    render: function() {
-      throw new Error("You need to implement Drawable#render")
+    render: function (timeStep) {
+      throw new Error("You need to implement #render for your subclass of Drawable")
     },
   }
 })

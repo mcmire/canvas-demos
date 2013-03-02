@@ -29,6 +29,7 @@ window.Vec2 = (function () {
   function defop1(/* names..., fn */) {
     var names, outFn, regFn, newFn
     names = Array.prototype.slice.call(arguments)
+    // TODO: This is probably not all that performant...
     outFn = names.pop()
     regFn = function (v) {
       outFn(v, v)
@@ -131,13 +132,18 @@ window.Vec2 = (function () {
   })
 
   // rotation by 90 deg CCW
-  defop1('perp', function (v, out) {
+  defop1('lperp', function (v, out) {
     out[0] = -v[1]
     out[1] = v[0]
   })
+  // rotation by 90 deg CW
+  defop1('rperp', function (v, out) {
+    out[0] = v[1]
+    out[1] = -v[0]
+  })
 
   defop1('unit', 'norm', function (v, out) {
-    // ... ?
+    Vec2.div(v, Vec2.mag(v), out)
   })
 
   // linear interpolation

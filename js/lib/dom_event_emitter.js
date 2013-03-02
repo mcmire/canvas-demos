@@ -40,12 +40,13 @@ window.domEventEmitter = (function () {
       })
     }
 
-    mixin.triggerEvents = function (/* names... */) {
+    mixin.triggerEvents = function (/* elem, names... */) {
       var _this = this,
-          names = Array.prototype.slice(args)
+          names = Array.prototype.slice(args),
+          elem = names.shift()
       $.v.each(names, function (name) {
         var nameWithNs = namespacedEventName.call(this, name)
-        $(_this).trigger(nameWithNs)
+        $(elem).trigger(nameWithNs)
       })
     }
 

@@ -58,7 +58,7 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
         this.handleInput()
         var forces = this.calculateForces()
         symplecticEulerIntegrator.advance(forces, this.currState, timeStep)
-        this.canvas.fixPossibleCollision(this)
+        this.fixCollisions()
         //this.timeSinceLastUpdate -= timeStep
         //this.forceUpdate = false
         //this.prevState = this.currState.clone()
@@ -74,6 +74,10 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
         force: Vec2(0,0),
         torque: 0
       }
+    },
+
+    fixCollisions: function () {
+      this.canvas.fixPossibleCollision(this)
     },
 
     render: function(timeStep) {

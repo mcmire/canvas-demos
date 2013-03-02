@@ -64,6 +64,27 @@ $.v.extend(Canvas.prototype, {
     })
   },
 
+  polygon: function (vertices, options) {
+    this.withinState(function () {
+      this.ctx.translate(x, y)
+      if (options.rotate) { this.ctx.rotate(options.rotate) }
+      this.withinPath(function () {
+        var i, len
+        this.ctx.moveTo(vertices[0][0], vertices[0][1])
+        for (i = 1, len = vertices.length; i < len; i++) {
+          this.lineTo(vertices[i][0], vertices[i][1])
+        }
+      })
+      if (options.fill) {
+        this.ctx.fillStyle = options.fill
+        this.ctx.fill()
+      } else if (options.stroke) {
+        this.ctx.strokeStyle = options.stroke
+        this.ctx.stroke()
+      }
+    })
+  },
+
   // TODO: Apply transformation, and add configurePath
   arrow: function(p1, p2) {
     var dy, dx, f, sdy, sdx
