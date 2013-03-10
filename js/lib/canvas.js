@@ -16,9 +16,6 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this.height = ('height' in options) ? options.height : 500
 
       this._addControls()
-      if (this.options.debug) this._addDebug()
-      if (this.options.trackFps) this._addFpsDisplay()
-      if (this.options.showClock) this._addClock()
       this._addCanvas()
 
       this.ctx = this.$canvasElement[0].getContext('2d')
@@ -38,9 +35,28 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
           }
         }
 
-        tick = function () {
-          _this.ctx.clearRect(0, 0, _this.width, _this.height)
-          _this.objects.tick()
+        tick = function (isForOneFrame) {
+          console.log('tick')
+          var currentTime, tickTime, deltaTime
+          if (isForOneFrame) {
+            _this.objects.update(_this.gameTime, timeStep)
+            _this.clear()
+            _this.objects.render()
+          }
+          else {
+            // http://gafferongames.com/game-physics/fix-your-timestep/
+            currentTime = (new Date()).getTime()
+            tickTime = currentTime - _this.lastTickTime
+            while (tickTime > 0) {
+              deltaTime = Math.min(tickTime, timeStep)
+              _this.objects.update(_this.gameTime, deltaTime)
+              tickTime -= deltaTime
+              _this.gameTime += deltaTime
+            }
+            _this.clear()
+            _this.objects.render()
+            _this.lastTickTime = currentTime
+          }
         }
 
         _this.loop = loop
@@ -63,13 +79,16 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this.keyboard.removeEvents()
     },
 
+    clear: function() {
+      this.ctx.clearRect(0, 0, this.width, this.height)
+    },
+
     start: function() {
       this.addEvents()
-      this._clear()
+      this.clear()
       this.isRunning = true
       this._startTimer()
       this.$starterBtn.text('Stop')
-      this.$pauserBtn.attr('disabled', false)
       this.$drawBtn.attr('disabled', true)
     },
 
@@ -78,43 +97,12 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this.isRunning = false
       this._stopTimer()
       this.$starterBtn.text('Start')
-      this.$pauserBtn.attr('disabled', true)
       this.$drawBtn.attr('disabled', false)
-    },
-
-    pause: function() {
-      this.isRunning = false
-      this._stopTimer()
-      this.isPaused = true
-      this.$pauserBtn.text('Resume')
-      this.$starterBtn.text('Start')
-    },
-
-    resume: function() {
-      this.isRunning = true
-      this._startTimer()
-      this.isPaused = false
-      this.$pauserBtn.text('Pause')
-      this.$starterBtn.text('Stop')
     },
 
     reset: function () {
       this.stop()
-      this._clear()
-    },
-
-    debug: function(msg) {
-      if (this.debug) this.$debugDiv.append("<p>"+msg+"</p>")
-    },
-
-    // TODO: Use setBounds instead of this, for consistency with CanvasObject?
-    getBounds: function(miter) {
-      var miter
-      miter = miter || 0
-      return [
-        [0 + miter, this.width - miter],
-        [0 + miter, this.height - miter]
-      ]
+      this.clear()
     },
 
     randomPos: function(bx, by) {
@@ -144,31 +132,6 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       )
     },
 
-    /*
-    repulsionForce: function (obj) {
-      var maxForce, k, xxa, xxb, xya, xyb, fxa, fxb, fya, fyb
-      // force pushed on an object if it ends up getting so close that it
-      // touches the border of the canvas
-      maxForce = 20
-      // not sure how to describe this number, but it affects the
-      // acceleration curve over time - the smaller the number, the faster the
-      // acceleration tapers off as the object backs away from the border;
-      // the larger the number, the sooner the force starts to affect the object
-      // as it gets closer to the border
-      k = 32
-      xxa = newState.pos[0]
-      xxb = this.canvas.width - newState.pos[0]
-      xya = newState.pos[1]
-      xyb = this.canvas.width - newState.pos[1]
-      // I just figured this out with a graphing calculator
-      fxa = maxForce / (((xxa * xxa) / k) + 1)
-      fxb = -maxForce / (((xxb * xxb) / k) + 1)
-      fya = maxForce / (((xya * xya) / k) + 1)
-      fyb = -maxForce / (((xyb * xyb) / k) + 1)
-      return Vec2(fxa + fxb, fya + fyb)
-    },
-    */
-
     fixPossibleCollision: function (obj) {
       var state = obj.state,
           mom = state.momentum,
@@ -191,6 +154,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       if (hitLeft || hitRight) {
         pos[0] = hitLeft ? ohw : (w - ohw)
         vel[0] = -vel[0]
+        // coefficient of restitution
         mom[0] = -(mom[0] * 0.65)
         fixed = true
       }
@@ -209,47 +173,31 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
 
     _startTimer: function() {
       var _this = this
-      // TODO: This should subtract time paused or something...
       this.startTime = this.lastTickTime = (new Date()).getTime()
-      this.timeSinceLastUpdate = 0
+      this.gameTime = 0
       this.loop()
     },
 
     _stopTimer: function () {
-      if (this.timer) clearRequestInterval(this.timer)
+      if (this.timer) { clearRequestInterval(this.timer) }
       this.timer = null
-    },
-
-    _clear: function() {
-      this.ctx.clearRect(0, 0, this.width, this.height)
-      if (this.options.debug) this._clearDebug()
     },
 
     //---
 
     _addControls: function () {
-      var $controlsDiv, $p, canvas, $pauserBtn, $drawBtn, $starterBtn, $resetBtn
+      var $controlsDiv, $p, canvas, $drawBtn, $starterBtn, $resetBtn
 
       $controlsDiv = $('<div id="canvas-controls"></div>')
 
       $p = $('<p id="canvas-anim-controls"></p>')
       canvas = this
-      $pauserBtn = $('<button disabled="disabled">Pause</button>')
       $drawBtn = $('<button>Next frame</button>')
       $starterBtn = $('<button>Start</button>')
       $resetBtn = $('<button>Reset</button>')
 
-      $pauserBtn.on('click', function() {
-        if (canvas.isPaused) {
-          canvas.resume()
-        } else {
-          canvas.pause()
-        }
-        return false
-      })
-
       $drawBtn.on('click', function() {
-        canvas.tick()
+        canvas.tick(true)
         return false
       })
 
@@ -267,13 +215,15 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
         return false
       })
 
-      $p.append($starterBtn).append($pauserBtn).append($drawBtn).append($resetBtn)
+      $p
+        .append($starterBtn)
+        .append($drawBtn)
+        .append($resetBtn)
 
       $controlsDiv.append($p)
       this.$wrapperElement.append($controlsDiv)
 
       this.$controlsDiv = $controlsDiv
-      this.$pauserBtn = $pauserBtn
       this.$drawBtn = $drawBtn
       this.$starterBtn = $starterBtn
       this.$resetBtn = $resetBtn
@@ -292,46 +242,6 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
         })
       this.$canvasWrapperElement.append(this.$canvasElement)
       this.$wrapperElement.append(this.$canvasWrapperElement)
-    },
-
-    _addDebug: function () {
-      this.$debugDiv = $('<p id="canvas-debug">(debug goes here)</p>')
-      this.$controlsDiv.append(this.$debugDiv)
-    },
-
-    _tickObjects: function () {
-      this.objects.tick()
-    },
-
-    _addFpsDisplay: function () {
-      this.$ticksPerSecondDiv = $('<p id="canvas-ticksPerSecond">f/s:</p>')
-      this.$controlsDiv.append(this.$ticksPerSecondDiv)
-    },
-
-    _dumpFps: function () {
-      var now, timeElapsed, ticksPerSecond, msPerTick
-      if (!this.frameNo || !this.startTime) return
-      now = new Date()
-      timeElapsed = (now - this.startTime) / 1000
-      ticksPerSecond = this.frameNo / timeElapsed
-      msPerTick = 1000 / ticksPerSecond
-      this.$ticksPerSecondDiv.html("f/s: " + ticksPerSecond + "<br />ms/f: " + msPerTick)
-    },
-
-    _addClock: function () {
-      this.$clockDiv = $('<p id="canvas-clock">Time elapsed:</p>')
-      this.$controlsDiv.append(this.$clockDiv)
-    },
-
-    _tickClock: function () {
-      var now, diff
-      now = new Date()
-      diff = (now - this.startTime) / 1000
-      this.$clockDiv.html("Time elapsed: " + diff + " s")
-    },
-
-    _clearDebug: function() {
-      this.$debugDiv.html("")
     }
   }
 })

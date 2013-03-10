@@ -2,42 +2,43 @@
 'use strict';
 
 window.CanvasObject = P(Drawable, function(proto, uber, klass) {
-  klass.hasAutonomousUpdates = function (subclass) {
-    subclass.mixin(function (proto, uber) {
-      proto.updateProperties = function () {
-        uber.updateProperties.call(this)
-        var forces = this.calculateForces()
+  klass.hasAutonomousUpdates = function (obj) {
+    obj.updateProperties = (function (_super) {
+      return function (gameTime, timeStep) {
+        var forces
+        _super.call(this)
+        forces = this.calculateForces()
         symplecticEulerIntegrator.advance(forces, this.state, timeStep)
         this.fixCollisions()
       }
-    })
+    })(obj.updateProperties)
   }
 
   return {
     init: function(parent, opts) {
       uber.init.call(this, parent)
       this.setOptions(opts)
-      if (!this.color) { this.color = 'black' }
-      this.resetCounters()
-      this.setBounds()
-    },
-
-    resetCounters: function () {
-      this.timeSinceLastUpdate = 0
-      this.forceUpdate = false
     },
 
     setOptions: function(opts) {
       this.options = opts
-      this.setDimensions(opts.width, opts.height)
-      this.setDrawStyle(opts.drawStyle)
-      this.setColor(opts.color)
-      this.setState(opts)
+      this.dimensions = {width: 0, height: 0}
+      this.drawStyle = 'fill'
+      this.color = 'black'
+      this.state = State()
+      if (opts.dimensions) { this.setDimensions(opts.dimensions) }
+      if (opts.drawStyle) { this.setDrawStyle(opts.drawStyle) }
+      if (opts.color) { this.setColor(opts.color) }
+      if (opts.state) { this.updateState(opts.state) }
     },
 
-    setDimensions: function (width, height) {
-      this.width = width
-      this.height = height
+    // these are all separate methods so that we can hook into them if need be
+
+    setDimensions: function (dims) {
+      this.dimensions = {
+        width: dims.width,
+        height: dims.height
+      }
     },
 
     setDrawStyle: function (drawStyle) {
@@ -48,18 +49,24 @@ window.CanvasObject = P(Drawable, function(proto, uber, klass) {
       this.color = color
     },
 
-    setState: function (opts) {
-      this.state = State(opts)
+    updateState: function (props) {
+      var pos = this.state.position
+      this.state.update(props)
+      if (!Vec2.areEqual(pos, this.state.position)) {
+        this.afterUpdatingPosition()
+      }
     },
 
-    tick: function () {
-      this.update()
-      this.render()
+    enableGravity: function () {
+      this.hasGravity = true
     },
 
-    update: function () {
-      this.updateProperties()
-      this.setBounds()
+    disableGravity: function () {
+      this.hasGravity = false
+    },
+
+    update: function (gameTime, timeStep) {
+      this.updateProperties(gameTime, timeStep)
     },
 
     handleInput: function () {
@@ -82,16 +89,23 @@ window.CanvasObject = P(Drawable, function(proto, uber, klass) {
       this.draw()
     },
 
-    updateProperties: function () {
+    updateProperties: function (gameTime, timeStep) {
       this.handleInput()
     },
 
-    draw: function () {
-      throw "Must be implemented in a subclass"
+    afterUpdatingPosition: function () {
+      this.updateBounds()
     },
 
-    setBounds: function () {
-      throw "Must be implemented in a subclass"
+    draw: function () {
+      throw "#draw must be implemented in a subclass of CanvasObject"
+    },
+
+    updateBounds: function () {
+      this.bounds = [
+        [0, 0],
+        [this.dimensions.width, this.dimensions.height]
+      ]
     }
   }
 })

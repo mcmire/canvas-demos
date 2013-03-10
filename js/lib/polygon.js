@@ -132,36 +132,33 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
     this.vertices = opts.vertices
     // Here we are assuming that the vertices of the shape never change
     // throughout the life of the shape
+    this.edges = buildEdges(this.vertices)
     this.edgeNormals = buildEdgeNormals(this.vertices)
-    this._syncProperties()
   }
 
-  proto.update = function () {
-    uber.update.apply(this, arguments)
-    this._syncProperties()
+  proto.afterUpdatingPosition = function () {
+    uber.afterUpdatingPosition.call(this)
+    this.absVertices = buildAbsVertices(this.vertices, this.state.position)
   }
 
-  proto.setBounds = function () {
+  proto.updateBounds = function () {
     var i, len, v,
         x1 = Infinity
         x2 = -Infinity
         y1 = Infinity
         y2 = -Infinity
-    //console.log({pos: this.state.position})
     for (i = 0, len = this.vertices.length; i < len; i++) {
       v = Vec2.nadd(this.state.position, this.vertices[i])
-      //console.log({v: this.vertices[i], 'v*': v})
       if (v[0] <= x1) { x1 = v[0] }
       if (v[0] >= x2) { x2 = v[0] }
       if (v[1] <= y1) { y1 = v[1] }
       if (v[1] >= y2) { y2 = v[1] }
     }
-    //console.log(JSON.stringify({x1:x1, x2:x2, y1:y1, y2:y2}))
     this.bounds = [[x1, x2], [y1, y2]]
   }
 
   proto.draw = function () {
-    var s = this.interpState
+    var s = this.renderState
     this.canvas.polygon(s.position, this.vertices, {
       rotate: s.orientation,
       drawStyle: this.drawStyle,
@@ -196,7 +193,7 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
   // * http://demonstrations.wolfram.com/AnEfficientTestForAPointToBeInAConvexPolygon/
   // * http://www.exaflop.org/docs/naifgfx/naifpip.html
   //
-  proto.coordsAreInside = function (v) {
+  proto.pointIsInside = function (v) {
     var i, len, v1, v2, edge, x
     // Assume that vertices are defined for the polygon going clockwise. First
     // translate the polygon so that `v` is the origin. Then, for each edge,
@@ -214,10 +211,5 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
       if (x < 0) { return false }
     }
     return true
-  }
-
-  proto._syncProperties = function () {
-    this.absVertices = buildAbsVertices(this.vertices, this.state.position)
-    this.edges = buildEdges(this.absVertices)
   }
 })

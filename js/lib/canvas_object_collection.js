@@ -6,41 +6,12 @@ window.CanvasObjectCollection = P(Drawable, function (proto, uber) {
     init: function (parent) {
       uber.init.call(this, parent)
       this.objects = []
-      this.hiddenObjects = []
-    },
-
-    handleInput: function () {
-      var i, len
-      for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].handleInput()
-      }
-    },
-
-    update: function (t, dt) {
-      var i, len
-      for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].update(t, dt)
-      }
-    },
-
-    render: function(interpFactor) {
-      var i, len
-      for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].render(interpFactor)
-      }
-    },
-
-    clear: function() {
-      var i, len
-      for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].clear()
-      }
     },
 
     addObject: function(klass/*, rest... */) {
       var rest, args, object
       rest = Array.prototype.slice.call(arguments, 1)
-      // Does this work??
+      // XXX: Does this work??
       if (!(klass.prototype instanceof CanvasObject)) {
         throw "klass must be a subclass of CanvasObject"
       }
@@ -52,18 +23,25 @@ window.CanvasObjectCollection = P(Drawable, function (proto, uber) {
       return object
     },
 
-    stopDrawingObject: function (object) {
-      var idx
-      idx = this.objects.indexOf(object)
-      this.hiddenObjects.push(object)
-      if (idx) this.objects.splice(idx, 1)
+    clear: function() {
+      var i, len
+      for (i = 0, len = this.objects.length; i < len; i++) {
+        this.objects[i].clear()
+      }
     },
 
-    resumeDrawingObject: function (object) {
-      var idx
-      idx = this.hiddenObjects.indexOf(object)
-      this.objects.push(object)
-      if (idx) this.hiddenObjects.splice(idx, 1)
+    update: function (gameTime, timeStep) {
+      var i, len
+      for (i = 0, len = this.objects.length; i < len; i++) {
+        this.objects[i].update(gameTime, timeStep)
+      }
+    },
+
+    render: function (interpFactor) {
+      var i, len
+      for (i = 0, len = this.objects.length; i < len; i++) {
+        this.objects[i].render(interpFactor)
+      }
     }
   }
 })

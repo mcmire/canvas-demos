@@ -30,20 +30,21 @@ window.State = P(function () {
       PROPERTIES = VECTORS.concat(SCALARS)
 
   return {
-    init: function (state) {
+    init: function (props) {
+      if (!props) props = {}
+      this.update(props)
+    },
+
+    update: function (props) {
       var _this = this
-
-      if (!state) state = {}
-
-      $.v.each(VECTORS, function (key) {
-        _this[key] = (key in state) ? state[key] : Vec2()
+      $.v.each(VECTORS, function (prop) {
+        _this[prop] = (prop in props) ? props[prop] : Vec2()
       })
-      $.v.each(SCALARS, function (key) {
-        _this[key] = (key in state)
-          ? state[key]
-          : (key === 'mass' || key === 'rotationalInertia') ? 1 : 0
+      $.v.each(SCALARS, function (prop) {
+        _this[prop] = (prop in props)
+          ? props[prop]
+          : (prop === 'mass' || prop === 'rotationalInertia') ? 1 : 0
       })
-
       this.recalculate()
     },
 

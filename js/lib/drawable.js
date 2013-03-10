@@ -7,6 +7,8 @@ window.Drawable = P(function () {
       this.setParent(parent)
     },
 
+    // FIXME: This is only here b/c DrawableCollection is different than
+    // CanvasObject. Split this up.
     setParent: function (parent) {
       if (!parent) return
       this.parent = parent
