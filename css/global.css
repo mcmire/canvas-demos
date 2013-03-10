@@ -1,21 +1,43 @@
-#canvas-controls, #easing-graph {
-  float: left;
-}
-#easing-graph {
-  margin-left: 30px;
-  border: 1px dotted black;
-}
-
-#canvas-anim-controls button {
-  margin-right: 10px;
-}
-
-#canvas {
-  clear: both;
-  display: block;
-  border: 1px solid black;
-}
 
 button, select, option {
   cursor: pointer;
 }
+
+#wrapper {
+  position: relative;
+}
+
+#canvas-controls {
+  float: left;
+}
+#canvas-anim-controls button {
+  margin-right: 10px;
+}
+
+.canvas-wrapper {
+  clear: both;
+  border: 1px solid black;
+  position: relative;
+}
+.canvas-wrapper > canvas {
+  display: block;
+}
+
+.mouse-info {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 20px;
+  font-size: 10pt;
+  background-color: white;
+  padding: 5px;
+}
+
+.canvas-wrapper > canvas[data-cursor="close-hand"] {
+  cursor: url("../images/closedhand.cur") 4 4, move;
+}
+.canvas-wrapper > canvas[data-cursor="open-hand"] {
+  cursor: url("../images/openhand.cur") 4 4, pointer;
+}
+

@@ -1,13 +1,25 @@
 
 'use strict';
 
-window.CanvasObject = P(Drawable, function(proto, uber) {
+window.CanvasObject = P(Drawable, function(proto, uber, klass) {
+  klass.hasAutonomousUpdates = function (subclass) {
+    subclass.mixin(function (proto, uber) {
+      proto.updateProperties = function () {
+        uber.updateProperties.call(this)
+        var forces = this.calculateForces()
+        symplecticEulerIntegrator.advance(forces, this.state, timeStep)
+        this.fixCollisions()
+      }
+    })
+  }
+
   return {
     init: function(parent, opts) {
       uber.init.call(this, parent)
       this.setOptions(opts)
       if (!this.color) { this.color = 'black' }
       this.resetCounters()
+      this.setBounds()
     },
 
     resetCounters: function () {
@@ -17,52 +29,37 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
 
     setOptions: function(opts) {
       this.options = opts
-
-      this.width = opts.width
-      this.height = opts.height
-      this.color = opts.color
-
-      this.prevState = null
-      this.currState = State(opts)
+      this.setDimensions(opts.width, opts.height)
+      this.setDrawStyle(opts.drawStyle)
+      this.setColor(opts.color)
+      this.setState(opts)
     },
 
-    stopDrawing: function() {
-      this.parent.stopDrawingObject(this)
+    setDimensions: function (width, height) {
+      this.width = width
+      this.height = height
     },
 
-    resumeDrawing: function () {
-      this.parent.resumeDrawingObject(this)
+    setDrawStyle: function (drawStyle) {
+      this.drawStyle = drawStyle
     },
 
-    clear: function () {
-      var pos
-      if (!this.prevState) { return }
-      pos = Vec2.rotate(this.prevState.position, this.prevState.orientation)
-      this.ctx.clearRect(
-        Math.ceil(pos[0] - (this.width / 2)) - 1,
-        Math.ceil(pos[1] - (this.height / 2)) - 1,
-        this.width + 1,
-        this.height + 1
-      )
+    setColor: function (color) {
+      this.color = color
     },
 
-    update: function (tickElapsedTime, timeStep) {
-      this.timeSinceLastUpdate += tickElapsedTime
-      //while (this.forceUpdate || this.timeSinceLastUpdate >= timeStep) {
-      if (this.timeSinceLastUpdate >= timeStep) {
-        // Catch the simulation up for as many timesteps as we are behind
-        // (hopefully only 1).
-        // Keep in mind the state calculated here for each object will not be
-        // fully rendered until the next update arrives and it's time to
-        // calculate another step.
-        this.handleInput()
-        var forces = this.calculateForces()
-        symplecticEulerIntegrator.advance(forces, this.currState, timeStep)
-        this.fixCollisions()
-        //this.timeSinceLastUpdate -= timeStep
-        //this.forceUpdate = false
-        //this.prevState = this.currState.clone()
-      }
+    setState: function (opts) {
+      this.state = State(opts)
+    },
+
+    tick: function () {
+      this.update()
+      this.render()
+    },
+
+    update: function () {
+      this.updateProperties()
+      this.setBounds()
     },
 
     handleInput: function () {
@@ -80,57 +77,21 @@ window.CanvasObject = P(Drawable, function(proto, uber) {
       this.canvas.fixPossibleCollision(this)
     },
 
-    render: function(timeStep) {
-      ///var alpha = this.timeSinceLastUpdate / timeStep
-      ///this.interpState = this._getInterpolatedState(alpha)
-      ///// TODO........
-      ///if (this.canvas.didFixPossibleCollision(this.interpState)) {
-      ///  // force update
-      ///  this.currState = this.interpState
-      ///  this.forceUpdate = true
-      ///}
-      this.interpState = this.currState
+    render: function () {
+      this.renderState = this.state
       this.draw()
+    },
+
+    updateProperties: function () {
+      this.handleInput()
     },
 
     draw: function () {
       throw "Must be implemented in a subclass"
     },
 
-    //---
-
-    getBounds: function (pos) {
-      this.getBoundsAt(this.pos)
-    },
-
-    getBoundsAt: function (pos) {
-      return [
-        // x1 .. x2
-        [pos[0] - this.width/2, pos[0] + this.width/2],
-        // y1 .. y2
-        [pos[1] - this.height/2, pos[1] + this.height/2]
-      ]
-    },
-
-    randomVector: function(def) {
-      return Vec2(
-        util.rand.int(def, def),
-        util.rand.int(def, def)
-      )
-    },
-
-    _getInterpolatedState: function (alpha) {
-      var a = this.prevState,
-          b = this.currState,
-          i = State()
-
-      i.position = Vec2.lerp(a.position, b.position, alpha)
-      i.momentum = Vec2.lerp(a.momentum, b.momentum, alpha)
-      i.orientation = util.math.lerp(a.orientation, b.orientation, alpha)
-      i.angularMomentum = util.math.lerp(a.angularMomentum, b.angularMomentum, alpha)
-      i.recalculate()
-
-      return i
+    setBounds: function () {
+      throw "Must be implemented in a subclass"
     }
   }
 })

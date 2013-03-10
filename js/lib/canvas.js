@@ -2,6 +2,8 @@
 'use strict';
 
 window.Canvas = P(function(proto, uber, klass, uberklass) {
+  domEventEmitter.mixInto(proto, 'canvas')
+
   return {
     init: function(id, options) {
       var options
@@ -37,19 +39,8 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
         }
 
         tick = function () {
-          var t, tickElapsedTime
-          t = (new Date()).getTime()
-          tickElapsedTime = t - _this.lastTickTime
-          // Cap this to avoid "spiral of death".
-          // (Honestly not sure why this is 250ms? A magic number if I ever saw one)
-          if (tickElapsedTime > 250) { tickElapsedTime = 250 }
-
           _this.ctx.clearRect(0, 0, _this.width, _this.height)
-          //_this.objects.clear()
-          _this.objects.update(tickElapsedTime, timeStep)
-          _this.objects.render(timeStep)
-
-          _this.lastTickTime = t
+          _this.objects.tick()
         }
 
         _this.loop = loop
@@ -68,7 +59,12 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       this.keyboard.addEvents()
     },
 
+    removeEvents: function () {
+      this.keyboard.removeEvents()
+    },
+
     start: function() {
+      this.addEvents()
       this._clear()
       this.isRunning = true
       this._startTimer()
@@ -78,6 +74,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     },
 
     stop: function() {
+      this.removeEvents()
       this.isRunning = false
       this._stopTimer()
       this.$starterBtn.text('Start')
@@ -110,6 +107,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
       if (this.debug) this.$debugDiv.append("<p>"+msg+"</p>")
     },
 
+    // TODO: Use setBounds instead of this, for consistency with CanvasObject?
     getBounds: function(miter) {
       var miter
       miter = miter || 0
@@ -172,7 +170,7 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     */
 
     fixPossibleCollision: function (obj) {
-      var state = obj.currState,
+      var state = obj.state,
           mom = state.momentum,
           vel = state.velocity,
           pos = state.position,
@@ -282,12 +280,18 @@ window.Canvas = P(function(proto, uber, klass, uberklass) {
     },
 
     _addCanvas: function () {
-      this.$canvasElement = $('<canvas id="canvas"></canvas>')
+      this.$canvasWrapperElement = $('<div id="canvas" class="canvas-wrapper"></div>')
+        .css({
+          width: this.width,
+          height: this.height
+        })
+      this.$canvasElement = $('<canvas></canvas>')
         .attr({
           width: this.width,
           height: this.height
         })
-      this.$wrapperElement.append(this.$canvasElement)
+      this.$canvasWrapperElement.append(this.$canvasElement)
+      this.$wrapperElement.append(this.$canvasWrapperElement)
     },
 
     _addDebug: function () {

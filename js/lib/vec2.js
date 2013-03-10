@@ -107,12 +107,14 @@ window.Vec2 = (function () {
     return (v2[1] - v1[1]) / (v2[0] - v1[0])
   }
 
-  defop2('dot', function (v1, v2) {
+  Vec2.dot = function (v1, v2) {
     return v1[0]*v2[0] + v1[1]*v2[1]
-  })
-  defop2('perpdot', function (v1, v2) {
-    return -v1[1]*v2[0] + v1[0]*v2[1]
-  })
+  }
+
+  // aka the "scalar cross product"
+  Vec2.perpdot = function (v1, v2) {
+    return v1[0]*v2[1] - v1[1]*v2[0]
+  }
 
   // Operations on one vector
 
@@ -142,7 +144,7 @@ window.Vec2 = (function () {
     out[1] = -v[0]
   })
 
-  defop1('unit', 'norm', function (v, out) {
+  defop1('normalize', function (v, out) {
     Vec2.div(v, Vec2.mag(v), out)
   })
 

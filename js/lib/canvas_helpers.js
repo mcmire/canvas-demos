@@ -64,24 +64,22 @@ $.v.extend(Canvas.prototype, {
     })
   },
 
-  polygon: function (vertices, options) {
+  polygon: function (pos, verts, options) {
+    var drawStyle = options.drawStyle || 'fill'
+    var color = options.color || 'black'
+    verts = verts.concat([verts[0]])
     this.withinState(function () {
-      this.ctx.translate(x, y)
+      this.ctx.translate(pos[0], pos[1])
       if (options.rotate) { this.ctx.rotate(options.rotate) }
       this.withinPath(function () {
-        var i, len
-        this.ctx.moveTo(vertices[0][0], vertices[0][1])
-        for (i = 1, len = vertices.length; i < len; i++) {
-          this.lineTo(vertices[i][0], vertices[i][1])
+        var i, len, method
+        for (i = 0, len = verts.length; i < len; i++) {
+          method = (i === 0) ? 'moveTo' : 'lineTo'
+          this.ctx[method](verts[i][0], verts[i][1])
         }
       })
-      if (options.fill) {
-        this.ctx.fillStyle = options.fill
-        this.ctx.fill()
-      } else if (options.stroke) {
-        this.ctx.strokeStyle = options.stroke
-        this.ctx.stroke()
-      }
+      this.ctx[drawStyle + 'Style'] = color
+      this.ctx[drawStyle]()
     })
   },
 

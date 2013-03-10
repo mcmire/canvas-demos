@@ -21,6 +21,10 @@ window.util = (function () {
     return v
   }
 
+  math.normalize = function (n) {
+    return n / Math.abs(n)
+  }
+
   // Return a number from 0..max, or min..max
   // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Math/random
   rand.int = function () {
