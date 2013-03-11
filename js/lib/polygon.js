@@ -7,7 +7,9 @@
 // * http://www.codezealot.org/archives/55
 // * http://physics2d.com/content/separation-axis
 
-window.Polygon = P(CanvasObject, function (proto, uber) {
+yorp.def('Polygon', function (proto) {
+  var Vec2 = yorp.Vec2
+
   function buildAbsVertices(vertices, position) {
     var absVertices = [],
         i, len
@@ -126,9 +128,9 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
     return overlappingEdge
   }
 
-  proto.setOptions = function (opts) {
+  this.setOptions = function (opts) {
     var _this = this
-    uber.setOptions.call(this, opts)
+    proto.setOptions.call(this, opts)
     this.vertices = opts.vertices
     // Here we are assuming that the vertices of the shape never change
     // throughout the life of the shape
@@ -136,12 +138,12 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
     this.edgeNormals = buildEdgeNormals(this.vertices)
   }
 
-  proto.afterUpdatingPosition = function () {
-    uber.afterUpdatingPosition.call(this)
+  this.afterUpdatingPosition = function () {
+    proto.afterUpdatingPosition.call(this)
     this.absVertices = buildAbsVertices(this.vertices, this.state.position)
   }
 
-  proto.updateBounds = function () {
+  this.updateBounds = function () {
     var i, len, v,
         x1 = Infinity
         x2 = -Infinity
@@ -157,7 +159,7 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
     this.bounds = [[x1, x2], [y1, y2]]
   }
 
-  proto.draw = function () {
+  this.draw = function () {
     var s = this.renderState
     this.canvas.polygon(s.position, this.vertices, {
       rotate: s.orientation,
@@ -166,10 +168,10 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
     })
   }
 
-  proto.fixCollisions = function () {
+  this.fixCollisions = function () {
     var overlappingEdge = [null, 0],
         i, len, axes, overlappingEdge
-    uber.fixCollisions.call(this)
+    proto.fixCollisions.call(this)
     for (i = 0, len = this.canvas.objects.length; i < len; i++) {
       obj = this.canvas.objects[i]
       if (obj === this) { continue }
@@ -193,7 +195,7 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
   // * http://demonstrations.wolfram.com/AnEfficientTestForAPointToBeInAConvexPolygon/
   // * http://www.exaflop.org/docs/naifgfx/naifpip.html
   //
-  proto.pointIsInside = function (v) {
+  this.pointIsInside = function (v) {
     var i, len, v1, v2, edge, x
     // Assume that vertices are defined for the polygon going clockwise. First
     // translate the polygon so that `v` is the origin. Then, for each edge,
@@ -213,3 +215,4 @@ window.Polygon = P(CanvasObject, function (proto, uber) {
     return true
   }
 })
+

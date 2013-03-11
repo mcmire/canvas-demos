@@ -1,8 +1,8 @@
 
 'use strict';
 
-window.integrator = {
-  advance: function (state, dt) {
-    throw "Must be implemented"
+yorp.def('Integrator', function (proto) {
+  this.advance = function (state, dt) {
+    throw new Error("Integrator#advance must be overridden")
   }
-}
+})

@@ -4,7 +4,7 @@
 // The idea for the third argument to the operations comes from:
 // http://media.tojicode.com/sfjs-vectors/#31
 
-window.Vec2 = (function () {
+yorp.Vec2 = (function () {
   function Vec2(x, y) {
     // TODO: Use a Int16Array?
     if (arguments.length) {
@@ -166,6 +166,15 @@ window.Vec2 = (function () {
   })
 
   // Calculations on one vector
+
+  Vec2.isa = function (v) {
+    return (
+      $.v.is.arr(v) &&
+      v.length === 2 &&
+      +v[0] === v[0]
+      && +v[1] === v[1]
+    )
+  }
 
   Vec2.clone = function (v) {
     return Vec2(v[0], v[1])

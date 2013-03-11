@@ -1,8 +1,8 @@
 
 'use strict';
 
-window.rkIntegrator = $.v.extend(integrator, {
-  rkStep: function (state, dt, derivative) {
+yorp.def('RKIntegrator', function (proto) {
+  this.rkStep = function (state, dt, derivative) {
     var sPosition, sMomentum, sOrientation, sAngularMomentum, newState,
         values, newDerivative
 
@@ -24,7 +24,7 @@ window.rkIntegrator = $.v.extend(integrator, {
         state.angularMomentum[1] + derivative.torque[1] * dt
       )
       // TODO: set rotational inertia depending on object
-      newState = State({
+      newState = State.create({
         position: sPosition,
         momentum: sMomentum,
         orientation: sOrientation,
@@ -37,7 +37,7 @@ window.rkIntegrator = $.v.extend(integrator, {
 
     values = obj.calculateForces(newState)
 
-    newDerivative = Derivative({
+    newDerivative = Derivative.create({
       velocity: newState.velocity,
       angularVelocity: newState.angularVelocity,
       force: values.force,

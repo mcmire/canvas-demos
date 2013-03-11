@@ -1,58 +1,50 @@
 
-window.domEventEmitter = (function () {
-  var ev = {}
+'use strict';
 
-  ev.mixInto = function (obj, namespace) {
-    function namespacedEventName(name) {
-      return name + "." + namespace
-    }
-
-    var mixin = {}
-
-    mixin.addEvents = function () {
-      throw new Error('addEvents must be overridden')
-    }
-
-    mixin.removeEvents = function () {
-      throw new Error('removeEvents must be overridden')
-    }
-
-    mixin.destroy = function () {
-      this.removeEvents()
-      this._super()
-    }
-
-    mixin.bindEvents = function (elem, events) {
-      var _this = this
-      $.v.each(events, function (name, handler) {
-        var nameWithNs = namespacedEventName(name)
-        $(elem).bind(nameWithNs, handler)
-      })
-    }
-
-    mixin.unbindEvents = function (/* elem, names... */) {
-      var _this = this,
-          names = Array.prototype.slice(args),
-          elem = names.shift()
-      $.v.each(names, function (name) {
-        var nameWithNs = namespacedEventName(name)
-        $(elem).unbind(nameWithNs)
-      })
-    }
-
-    mixin.triggerEvents = function (/* elem, names... */) {
-      var _this = this,
-          names = Array.prototype.slice(args),
-          elem = names.shift()
-      $.v.each(names, function (name) {
-        var nameWithNs = namespacedEventName.call(this, name)
-        $(elem).trigger(nameWithNs)
-      })
-    }
-
-    $.v.extend(obj, mixin)
+yorp.def('DOMEventEmitter', function (proto) {
+  function namespacedEventName(name) {
+    return [name, this.__name__].join('.')
   }
 
-  return ev
-})()
+  this.addEvents = function () {
+    throw new Error('DOMEventEmitter#addEvents needs to be overridden')
+  }
+
+  this.removeEvents = function () {
+    throw new Error('DOMEventEmitter#removeEvents needs to be overridden')
+  }
+
+  this.destroy = function () {
+    this.removeEvents()
+    this.proto.destroy.call(this)
+  }
+
+  this.bindEvents = function (elem, events) {
+    var _this = this
+    $.v.each(events, function (name, handler) {
+      var nameWithNs = namespacedEventName.call(_this, name)
+      $(elem).bind(nameWithNs, handler)
+    })
+  }
+
+  this.unbindEvents = function (/* elem, names... */) {
+    var _this = this,
+        names = Array.prototype.slice.call(arguments),
+        elem = names.shift()
+    $.v.each(names, function (name) {
+      var nameWithNs = namespacedEventName.call(_this, name)
+      $(elem).unbind(nameWithNs)
+    })
+  }
+
+  this.triggerEvents = function (/* elem, names... */) {
+    var _this = this,
+        names = Array.prototype.slice.call(arguments),
+        elem = names.shift()
+    $.v.each(names, function (name) {
+      var nameWithNs = namespacedEventName.call(_this, name)
+      $(elem).trigger(nameWithNs)
+    })
+  }
+})
 

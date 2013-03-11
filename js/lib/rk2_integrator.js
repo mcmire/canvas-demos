@@ -3,8 +3,8 @@
 
 // See comments in rk4_integrator.js for more on how this works.
 //
-window.rk2Integrator = $.v.extend(rkIntegrator, {
-  advance: function (state, dt) {
+window.def('RK2Integrator', yorp.RKIntegrator, function (proto) {
+  this.advance = function (state, dt) {
     var k1, k2
 
     k1 = this.rkStep(state, 0)

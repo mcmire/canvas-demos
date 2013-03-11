@@ -1,29 +1,24 @@
 
 'use strict';
 
-window.Drawable = P(function () {
-  return {
-    init: function (parent) {
-      this.setParent(parent)
-    },
+yorp.def('Drawable', function (proto) {
+  var Canvas = yorp.Canvas
 
-    // FIXME: This is only here b/c DrawableCollection is different than
-    // CanvasObject. Split this up.
-    setParent: function (parent) {
-      if (!parent) return
-      this.parent = parent
-      this.canvas = (parent === Canvas || parent instanceof Canvas)
-        ? parent
-        : parent.canvas
-      this.ctx = this.canvas.ctx
-    },
+  this._setup = function (parent) {
+    if (parent) { this.setParent(parent) }
+  }
 
-    update: function (tickElapsedTime, timeStep) {
-      throw new Error("You need to implement #update for your subclass of Drawable")
-    },
+  this.setParent = function (parent) {
+    this.parent = parent
+    this.canvas = ('canvas' in parent) ? parent.canvas : parent
+    this.ctx = this.canvas.ctx
+  }
 
-    render: function (timeStep) {
-      throw new Error("You need to implement #render for your subclass of Drawable")
-    },
+  this.update = function (tickElapsedTime, timeStep) {
+    throw new Error('Drawable#update needs to be overridden')
+  }
+
+  this.render = function (timeStep) {
+    throw new Error('Drawable#render needs to be overridden')
   }
 })

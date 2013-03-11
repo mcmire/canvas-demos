@@ -24,63 +24,63 @@
 // momentum, then calculate angular velocity by dividing angular momentum by
 // moment of inertia, then integrate angular velocity to get orientation.
 
-window.State = P(function () {
-  var VECTORS = ['position', 'momentum'],
+yorp.def('State', function (proto) {
+  var Vec2 = yorp.Vec2,
+      VECTORS = ['position', 'momentum'],
       SCALARS = ['forceAmount', 'velocity', 'orientation', 'angularMomentum', 'torque', 'mass', 'rotationalInertia'],
       PROPERTIES = VECTORS.concat(SCALARS)
 
-  return {
-    init: function (props) {
-      if (!props) props = {}
-      this.update(props)
-    },
+  this._setup = function (props) {
+    if (!props) props = {}
+    this.update(props)
+  }
 
-    update: function (props) {
-      var _this = this
-      $.v.each(VECTORS, function (prop) {
-        _this[prop] = (prop in props) ? props[prop] : Vec2()
-      })
-      $.v.each(SCALARS, function (prop) {
-        _this[prop] = (prop in props)
-          ? props[prop]
-          : (prop === 'mass' || prop === 'rotationalInertia') ? 1 : 0
-      })
-      this.recalculate()
-    },
+  this.update = function (props) {
+    var _this = this
+    $.v.each(VECTORS, function (prop) {
+      _this[prop] = (prop in props) ? props[prop] : Vec2()
+    })
+    $.v.each(SCALARS, function (prop) {
+      _this[prop] = (prop in props)
+        ? props[prop]
+        : (prop === 'mass' || prop === 'rotationalInertia') ? 1 : 0
+    })
+    this.recalculate()
+  }
 
-    recalculate: function () {
-      this.velocity = Vec2.ndiv(this.momentum, this.mass)
-      this.angularVelocity = this.angularMomentum / this.rotationalInertia
-    },
+  this.recalculate = function () {
+    this.velocity = Vec2.ndiv(this.momentum, this.mass)
+    this.angularVelocity = this.angularMomentum / this.rotationalInertia
+  }
 
-    clone: function () {
-      var _this = this,
-          state = new State()
-      $.v.each(PROPERTIES, function (key) {
-        state[key] = _this[key]
-      })
-      return state
-    }
+  this.clone = function () {
+    var _this = this,
+        state = proto.clone.call(this),
+        v
+    $.v.each(PROPERTIES, function (key) {
+      v = _this[key]
+      state[key] = Vec2.isa(v) ? Vec2.clone(v) : v
+    })
+    return state
   }
 })
 
-window.Derivative = P(function () {
-  return {
-    init: function (state) {
-      var vectors, scalars
+// FIXME This is not used atm
+yorp.def('Derivative', function (proto) {
+  this._setup = function (state) {
+    var vectors, scalars
 
-      if (!state) state = {}
+    if (!state) state = {}
 
-      vectors = ['velocity', 'force']
-      scalars = ['angularVelocity', 'torque']
+    vectors = ['velocity', 'force']
+    scalars = ['angularVelocity', 'torque']
 
-      $.v.each(vectors, function (key) {
-        if (!(key in state)) state[key] = Vec2()
-      })
-      $.v.each(scalars, function (key) {
-        if (!(key in state)) state[key] = 0
-      })
-    }
+    $.v.each(vectors, function (key) {
+      if (!(key in state)) state[key] = Vec2()
+    })
+    $.v.each(scalars, function (key) {
+      if (!(key in state)) state[key] = 0
+    })
   }
 })
 

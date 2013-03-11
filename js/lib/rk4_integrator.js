@@ -192,8 +192,8 @@
 // [1]: http://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods
 // [2]: http://gafferongames.com/game-physics/integration-basics
 //
-window.rk4Integrator = $.v.extend(rkIntegrator, {
-  advance: function (state, dt) {
+yorp.def('RK4Integrator', yorp.RKIntegrator, function (proto) {
+  this.advance = function (state, dt) {
     var k1, k2, k3, k4
 
     k1 = this.rkStep(state, 0)

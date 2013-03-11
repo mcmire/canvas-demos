@@ -1,7 +1,7 @@
 
 'use strict';
 
-$.v.extend(Canvas.prototype, {
+yorp.Canvas.extend({
   line: function(x1, y1, x2, y2, options) {
     var options
     options = $.v.extend({}, options, {

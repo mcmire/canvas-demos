@@ -1,47 +1,45 @@
 
 'use strict';
 
-window.CanvasObjectCollection = P(Drawable, function (proto, uber) {
-  return {
-    init: function (parent) {
-      uber.init.call(this, parent)
-      this.objects = []
-    },
+yorp.def('CanvasObjectCollection', yorp.Drawable, function (proto) {
+  var CanvasObject = yorp.CanvasObject
 
-    addObject: function(klass/*, rest... */) {
-      var rest, args, object
-      rest = Array.prototype.slice.call(arguments, 1)
-      // XXX: Does this work??
-      if (!(klass.prototype instanceof CanvasObject)) {
-        throw "klass must be a subclass of CanvasObject"
-      }
-      // This assumes that the klass's first argument is a 'parent' value
-      // and that `klass` is a P constructor
-      args = rest ? [this].concat(rest) : [this]
-      object = klass.apply(null, args)
-      this.objects.push(object)
-      return object
-    },
+  this._setup = function (parent) {
+    proto._setup.call(this, parent)
+    this.objects = []
+  }
 
-    clear: function() {
-      var i, len
-      for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].clear()
-      }
-    },
+  this.addObject = function(proto/*, rest... */) {
+    var rest, args, object
+    rest = Array.prototype.slice.call(arguments, 1)
+    if (!CanvasObject.isPrototypeOf(proto)) {
+      throw "The given prototype must be a child of CanvasObject"
+    }
+    // This assumes that the proto's constructor accepts a 'parent' argument
+    args = rest ? [this].concat(rest) : [this]
+    object = proto.create.apply(proto, args)
+    this.objects.push(object)
+    return object
+  }
 
-    update: function (gameTime, timeStep) {
-      var i, len
-      for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].update(gameTime, timeStep)
-      }
-    },
+  this.clear = function() {
+    var i, len
+    for (i = 0, len = this.objects.length; i < len; i++) {
+      this.objects[i].clear()
+    }
+  }
 
-    render: function (interpFactor) {
-      var i, len
-      for (i = 0, len = this.objects.length; i < len; i++) {
-        this.objects[i].render(interpFactor)
-      }
+  this.update = function (gameTime, timeStep) {
+    var i, len
+    for (i = 0, len = this.objects.length; i < len; i++) {
+      this.objects[i].update(gameTime, timeStep)
+    }
+  }
+
+  this.render = function (interpFactor) {
+    var i, len
+    for (i = 0, len = this.objects.length; i < len; i++) {
+      this.objects[i].render(interpFactor)
     }
   }
 })

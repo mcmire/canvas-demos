@@ -56,6 +56,5 @@
       return clearInterval(handle)
     }
   }
-
 })()
 

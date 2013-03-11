@@ -1,15 +1,12 @@
 
 'use strict';
 
-// not sure where else this goes
-Math.TAU = Math.PI * 2
+yorp.util = {}
 
-window.util = (function () {
-  var math = {},
-      util = {},
-      rand = {},
-      arr = {},
-      fn = {}
+yorp.util.math = yorp.math = (function () {
+  var math = {}
+
+  math.TAU = Math.PI * 2
 
   math.lerp = function (v1, v2, alpha) {
     return (v1 * (1 - alpha)) + (v2 * alpha)
@@ -25,6 +22,12 @@ window.util = (function () {
     return n / Math.abs(n)
   }
 
+  return math
+})()
+
+yorp.util.rand = yorp.rand = (function () {
+  var rand = {}
+
   // Return a number from 0..max, or min..max
   // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Math/random
   rand.int = function () {
@@ -39,39 +42,16 @@ window.util = (function () {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
 
-  // Allows you to call a constructor with a variable number of arguments
-  // http://stackoverflow.com/questions/1959247/javascript-apply-on-constructor-throwing-malformed-formal-parameter
-  fn.splat = function(cons, args) {
-    var func = function() { cons.apply(this, arguments[0]) }
-    func.prototype = cons.prototype
-    return new func(args)
-  }
+  return rand
+})()
+
+yorp.util.arr = yorp.arr = (function () {
+  var arr = {}
 
   arr.sum = function(array) {
     return $.v.reduce(array, function(s,v) { s += v; s }, 0)
   }
 
-  util.math = math
-  util.rand = rand
-  util.arr = arr
-  util.fn = fn
-
-  return util
+  return arr
 })()
-
-window.PeriodicLogger = P(function (proto) {
-  proto.init = function () {
-    this.reset()
-  }
-  proto.reset = function () {
-    this.timeLastLogged = (new Date()).getTime()
-  }
-  proto.log = function (obj) {
-    var t = (new Date()).getTime()
-    if ((t - this.timeLastLogged) >= 1000) {
-      console.log(obj)
-      this.reset()
-    }
-  }
-})
 
