@@ -14,7 +14,7 @@
 //   orientation = o (scalar)
 //   angular velocity = w = do/dt (scalar)
 //   angular acceleration = A = dw/dt (scalar)
-//   angular momentum = L = rperp . p = I * w (scalar)
+//   angular momentum = L = r x p = r_perp . p = I * w (scalar)
 //   torque = t = dL/dt = I * A (scalar)
 //
 // The strategy here is to integrate force to get momentum, then calculate

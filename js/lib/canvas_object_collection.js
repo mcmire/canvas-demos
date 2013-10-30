@@ -12,8 +12,8 @@ yorp.def('CanvasObjectCollection', yorp.Drawable, function (proto) {
   this.addObject = function(proto/*, rest... */) {
     var rest, args, object
     rest = Array.prototype.slice.call(arguments, 1)
-    if (!CanvasObject.isPrototypeOf(proto)) {
-      throw "The given prototype must be a child of CanvasObject"
+    if (!CanvasObject.isAncestorOf(proto)) {
+      throw "The given object must be a prototype and a descendant of CanvasObject"
     }
     // This assumes that the proto's constructor accepts a 'parent' argument
     args = rest ? [this].concat(rest) : [this]
@@ -29,10 +29,10 @@ yorp.def('CanvasObjectCollection', yorp.Drawable, function (proto) {
     }
   }
 
-  this.update = function (gameTime, timeStep) {
+  this.update = function (timeStep) {
     var i, len
     for (i = 0, len = this.objects.length; i < len; i++) {
-      this.objects[i].update(gameTime, timeStep)
+      this.objects[i].update(timeStep)
     }
   }
 

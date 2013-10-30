@@ -3,7 +3,7 @@
 
 // See comments in rk4_integrator.js for more on how this works.
 //
-window.def('RK2Integrator', yorp.RKIntegrator, function (proto) {
+window.def('rk2Integrator', yorp.rkIntegrator, function (proto) {
   this.advance = function (state, dt) {
     var k1, k2
 

@@ -1,7 +1,7 @@
 
 'use strict';
 
-yorp.def('RKIntegrator', function (proto) {
+yorp.def('rkIntegrator', function (proto) {
   this.rkStep = function (state, dt, derivative) {
     var sPosition, sMomentum, sOrientation, sAngularMomentum, newState,
         values, newDerivative

@@ -155,14 +155,14 @@ yorp.Vec2 = (function () {
   // linear interpolation
   Vec2.lerp = function (v1, v2, alpha) {
     return Vec2(
-      util.math.lerp(v1[0], v2[0], alpha),
-      util.math.lerp(v1[1], v2[1], alpha)
+      yorp.math.lerp(v1[0], v2[0], alpha),
+      yorp.math.lerp(v1[1], v2[1], alpha)
     )
   }
 
   defop2('floor', function (v, minValue, out) {
-    out[0] = util.math.floor(v[0], minValue)
-    out[1] = util.math.floor(v[1], minValue)
+    out[0] = yorp.math.floor(v[0], minValue)
+    out[1] = yorp.math.floor(v[1], minValue)
   })
 
   // Calculations on one vector

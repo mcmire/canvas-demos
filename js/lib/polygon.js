@@ -7,17 +7,8 @@
 // * http://www.codezealot.org/archives/55
 // * http://physics2d.com/content/separation-axis
 
-yorp.def('Polygon', function (proto) {
+yorp.def('Polygon', yorp.CanvasObject, function (proto) {
   var Vec2 = yorp.Vec2
-
-  function buildAbsVertices(vertices, position) {
-    var absVertices = [],
-        i, len
-    for (i = 0, len = vertices.length; i < len; i++) {
-      absVertices.push(Vec2.nadd(vertices[i], position))
-    }
-    return absVertices
-  }
 
   function buildEdges(absVertices) {
     var edges = [],
@@ -46,6 +37,58 @@ yorp.def('Polygon', function (proto) {
       normals.push(normal)
     }
     return normals
+  }
+
+  function buildAbsVertices(vertices, position, orientation, radius) {
+    var absVertices = [],
+        offset = [
+          position[0] + radius * Math.cos(orientation),
+          position[1] + radius * Math.sin(orientation)
+        ],
+        i, len, v
+    for (i = 0, len = vertices.length; i < len; i++) {
+      absVertices.push(Vec2(
+        vertices[i][0] + offset[0],
+        vertices[i][1] + offset[1]
+      ))
+    }
+    return absVertices
+  }
+
+  function calculateBounds(vertices) {
+    var i, len, v,
+        x1 = Infinity,
+        x2 = -Infinity,
+        y1 = Infinity,
+        y2 = -Infinity
+    for (i = 0, len = vertices.length; i < len; i++) {
+      v = vertices[i]
+      if (v[0] <= x1) { x1 = v[0] }
+      if (v[0] >= x2) { x2 = v[0] }
+      if (v[1] <= y1) { y1 = v[1] }
+      if (v[1] >= y2) { y2 = v[1] }
+    }
+    return [Vec2(x1, x2), Vec2(y1, y2)]
+  }
+
+  function calculateDimensions(bounds) {
+    return {
+      width: bounds[1][0] - bounds[0][0],
+      height: bounds[1][1] - bounds[0][1]
+    }
+  }
+
+  function calculateHalfDimensions(dims) {
+    return {
+      width: dims.width / 2,
+      height: dims.height / 2
+    }
+  }
+
+  function calculateRadius(vertices) {
+    var bounds = calculateBounds(vertices),
+        dims = calculateDimensions(bounds)
+    return Math.max(dims.width, dims.height)
   }
 
   function concatAxes(axes1, axes2) {
@@ -128,35 +171,42 @@ yorp.def('Polygon', function (proto) {
     return overlappingEdge
   }
 
+  this._setup = function(parent, opts) {
+    proto._setup.apply(this, arguments)
+    if (!opts) {
+      throw new Error("Options are required")
+    }
+  }
+
   this.setOptions = function (opts) {
     var _this = this
-    proto.setOptions.call(this, opts)
+    if (opts.vertices == null) {
+      throw new Error("Polygon.create requires a list of vertices")
+    }
     this.vertices = opts.vertices
     // Here we are assuming that the vertices of the shape never change
     // throughout the life of the shape
     this.edges = buildEdges(this.vertices)
     this.edgeNormals = buildEdgeNormals(this.vertices)
+    proto.setOptions.call(this, opts)
   }
 
-  this.afterUpdatingPosition = function () {
-    proto.afterUpdatingPosition.call(this)
-    this.absVertices = buildAbsVertices(this.vertices, this.state.position)
+  this.onUpdateState = function () {
+    this.radius = calculateRadius(this.vertices)
+    this.absVertices = buildAbsVertices(
+      this.vertices,
+      this.state.position,
+      this.state.orientation,
+      this.radius
+    )
+    proto.onUpdateState.call(this)
+    this.dimensions = calculateDimensions(this.bounds)
+    this.halfDimensions = calculateHalfDimensions(this.dimensions)
   }
 
   this.updateBounds = function () {
-    var i, len, v,
-        x1 = Infinity
-        x2 = -Infinity
-        y1 = Infinity
-        y2 = -Infinity
-    for (i = 0, len = this.vertices.length; i < len; i++) {
-      v = Vec2.nadd(this.state.position, this.vertices[i])
-      if (v[0] <= x1) { x1 = v[0] }
-      if (v[0] >= x2) { x2 = v[0] }
-      if (v[1] <= y1) { y1 = v[1] }
-      if (v[1] >= y2) { y2 = v[1] }
-    }
-    this.bounds = [[x1, x2], [y1, y2]]
+    this.bounds = calculateBounds(this.absVertices)
+    console.log({bounds: this.bounds})
   }
 
   this.draw = function () {
@@ -177,6 +227,7 @@ yorp.def('Polygon', function (proto) {
       if (obj === this) { continue }
       axes = concatAxes(this.edgeNormals, obj.edgeNormals)
       overlappingEdge = calculateEdgeNormalOverlaps(this.vertices, obj.vertices, axes)
+      // TODO............
       /*
       if (overlappingEdge) {
         Vec2.nmul(overlappingEdge[0], -overlap)

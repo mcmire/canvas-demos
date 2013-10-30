@@ -1,8 +1,8 @@
 
 'use strict';
 
-yorp.def('Integrator', function (proto) {
-  this.advance = function (state, dt) {
+yorp.def('integrator', function (proto) {
+  this.advance = function (forces, state, dt) {
     throw new Error("Integrator#advance must be overridden")
   }
 })

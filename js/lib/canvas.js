@@ -12,9 +12,13 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
     this.$wrapperElement = $(id)
     this.options = options = options || {}
 
-    this.ticksPerSecond = ('ticksPerSecond' in options) ? options.ticksPerSecond : 15
-    this.width = ('width' in options) ? options.width : 800
-    this.height = ('height' in options) ? options.height : 500
+    this.ticksPerSecond =
+      ('ticksPerSecond' in options) ? options.ticksPerSecond : 60
+    this.speedFactor =
+      ('speedFactor' in options) ? options.speedFactor : 1
+    this.dimensions = ('dimensions' in options) ?
+      {width: options.dimensions.width, height: options.dimensions.height} :
+      {width: 800, height: 500}
 
     this._addControls()
     this._addCanvas()
@@ -25,9 +29,10 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
     keyboard.init()
 
     ;(function (_this) {
-      var timeStep, loop, tick
+      var timeStep, speedFactor, loop, tick
 
       timeStep = _this.secondsPerTick
+      speedFactor = _this.speedFactor
 
       loop = function () {
         tick()
@@ -38,25 +43,29 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
 
       tick = function (isForOneFrame) {
         //console.log('tick')
-        var currentTime, tickTime, deltaTime
+        var currentTime, tickTime, updateTime, deltaTime
         if (isForOneFrame) {
-          _this.objects.update(_this.gameTime, timeStep)
+          _this.objects.update(5)
           _this.clear()
           _this.objects.render()
         }
         else {
           // http://gafferongames.com/game-physics/fix-your-timestep/
           currentTime = (new Date()).getTime()
-          tickTime = currentTime - _this.lastTickTime
-          while (tickTime > 0) {
-            deltaTime = Math.min(tickTime, timeStep)
-            _this.objects.update(_this.gameTime, deltaTime)
-            tickTime -= deltaTime
-            _this.gameTime += deltaTime
+          //tickTime = currentTime - _this.lastTickTime
+          updateTime = currentTime - _this.lastUpdateTime
+          //while (tickTime > 0) {
+          if (updateTime >= timeStep * 1000) {
+            //deltaTime = Math.min(tickTime, timeStep)
+            deltaTime = updateTime
+            _this.objects.update(deltaTime * speedFactor)
+            //tickTime -= deltaTime
+            //_this.gameTime += deltaTime
+            _this.lastUpdateTime = currentTime
           }
           _this.clear()
           _this.objects.render()
-          _this.lastTickTime = currentTime
+          //_this.lastTickTime = currentTime
         }
       }
 
@@ -81,7 +90,7 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
   }
 
   this.clear = function() {
-    this.ctx.clearRect(0, 0, this.width, this.height)
+    this.ctx.clearRect(0, 0, this.dimensions.width, this.dimensions.height)
   }
 
   this.start = function() {
@@ -121,15 +130,15 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
         break
     }
     return Vec2(
-      util.rand.int(this.width - bx),
-      util.rand.int(this.height - by)
+      util.rand.int(this.dimensions.width - bx),
+      util.rand.int(this.dimensions.height - by)
     )
   }
 
   this.center = function() {
     return Vec2(
-      Math.floor(this.width / 2),
-      Math.floor(this.height / 2)
+      Math.floor(this.dimensions.width / 2),
+      Math.floor(this.dimensions.height / 2)
     )
   }
 
@@ -137,23 +146,30 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
     var state = obj.state,
         mom = state.momentum,
         vel = state.velocity,
-        pos = state.position,
-        w = this.width,
-        h = this.height,
-        ohw = obj.width / 2,
-        ohh = obj.height / 2,
-        leftEdge = pos[0] - ohw,
-        rightEdge = pos[0] + ohw,
-        topEdge = pos[1] - ohh,
-        bottomEdge = pos[1] + ohh,
-        hitLeft = (leftEdge < 0),
-        hitRight = (rightEdge > w),
-        hitTop = (topEdge < 0),
-        hitBottom = (bottomEdge > h),
+        bounds = obj.bounds,
+        w = this.dimensions.width,
+        h = this.dimensions.height,
+        ohw = Math.ceil(obj.dimensions.width / 2),
+        ohh = Math.ceil(obj.dimensions.height / 2),
+        leftEdge = bounds[0] - ohw,
+        rightEdge = bounds[0] + ohw,
+        topEdge = bounds[1] - ohh,
+        bottomEdge = bounds[1] + ohh,
+        hitLeft = (leftEdge <= 0),
+        hitRight = (rightEdge >= w),
+        hitTop = (topEdge <= 0),
+        hitBottom = (bottomEdge >= h),
         fixed = false
 
+    /*
+    if (hitLeft) {
+      vn = $.v.find(obj.vertices, function (v) { v[0] < 0 })
+      n = Vec2.dot(vn, Vec2(-1, 0))
+    }
+    */
+
     if (hitLeft || hitRight) {
-      pos[0] = hitLeft ? ohw : (w - ohw)
+      pos[0] = hitLeft ? ohw : w - ohw
       vel[0] = -vel[0]
       // coefficient of restitution
       mom[0] = -(mom[0] * 0.65)
@@ -161,7 +177,7 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
     }
 
     if (hitTop || hitBottom) {
-      pos[1] = hitTop ? ohh : (h - ohh)
+      pos[1] = hitTop ? ohh : h - ohh
       vel[1] = -vel[1]
       mom[1] = -(mom[1] * 0.65)
       fixed = true
@@ -174,7 +190,7 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
 
   this._startTimer = function() {
     var _this = this
-    this.startTime = this.lastTickTime = (new Date()).getTime()
+    this.startTime = this.lastTickTime = this.lastUpdateTime = (new Date()).getTime()
     this.gameTime = 0
     this.loop()
   }
@@ -187,11 +203,11 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
   //---
 
   this._addControls = function () {
-    var $controlsDiv, $p, canvas, $drawBtn, $starterBtn, $resetBtn
+    var $controlsDiv, $para, canvas, $drawBtn, $starterBtn, $resetBtn
 
     $controlsDiv = $('<div id="canvas-controls"></div>')
 
-    $p = $('<p id="canvas-anim-controls"></p>')
+    $para = $('<p id="canvas-anim-controls"></p>')
     canvas = this
     $drawBtn = $('<button>Next frame</button>')
     $starterBtn = $('<button>Start</button>')
@@ -216,12 +232,12 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
       return false
     })
 
-    $p
+    $para
       .append($starterBtn)
       .append($drawBtn)
       .append($resetBtn)
 
-    $controlsDiv.append($p)
+    $controlsDiv.append($para)
     this.$wrapperElement.append($controlsDiv)
 
     this.$controlsDiv = $controlsDiv
@@ -232,15 +248,9 @@ yorp.def('Canvas', yorp.DOMEventEmitter, function (proto) {
 
   this._addCanvas = function () {
     this.$canvasWrapperElement = $('<div id="canvas" class="canvas-wrapper"></div>')
-      .css({
-        width: this.width,
-        height: this.height
-      })
+      .css(this.dimensions)
     this.$canvasElement = $('<canvas></canvas>')
-      .attr({
-        width: this.width,
-        height: this.height
-      })
+      .attr(this.dimensions)
     this.$canvasWrapperElement.append(this.$canvasElement)
     this.$wrapperElement.append(this.$canvasWrapperElement)
   }

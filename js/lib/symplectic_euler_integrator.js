@@ -1,7 +1,7 @@
 
 'use strict';
 
-yorp.def('SymplecticEulerIntegrator', yorp.Integrator, function (proto) {
+yorp.def('symplecticEulerIntegrator', yorp.integrator, function (proto) {
   this.advance = function (forces, state, dt) {
     state.momentum[0] += forces.force[0] * dt
     state.momentum[1] += forces.force[1] * dt

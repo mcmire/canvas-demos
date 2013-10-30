@@ -2,18 +2,17 @@
 'use strict';
 
 yorp.def('CanvasObject', yorp.Drawable, function (proto) {
+  function calculateBounds(dims) {
+    var hw = this.dimensions.width / 2,
+        hh = this.dimensions.height / 2
+    return [
+      Vec2(pos - hw, pos - hh),
+      Vec2(pos + hw, pos + hh)
+    ]
+  }
+
   var Vec2 = yorp.Vec2,
       State = yorp.State
-
-  this.withAutonomousUpdates = function (proto) {
-    this.updateProperties = function (gameTime, timeStep) {
-      var forces
-      proto.updateProperties.call(this)
-      forces = this.calculateForces()
-      symplecticEulerIntegrator.advance(forces, this.state, timeStep)
-      this.fixCollisions()
-    }
-  }
 
   this._setup = function(parent, opts) {
     proto._setup.call(this, parent)
@@ -24,12 +23,15 @@ yorp.def('CanvasObject', yorp.Drawable, function (proto) {
     if (opts) { this.setOptions(opts) }
   }
 
-  this.setOptions = function(opts) {
+  this.setOptions = function (opts) {
     this.options = opts
     if (opts.dimensions) { this.setDimensions(opts.dimensions) }
     if (opts.drawStyle) { this.setDrawStyle(opts.drawStyle) }
     if (opts.color) { this.setColor(opts.color) }
-    if (opts.state) { this.updateState(opts.state) }
+    if (opts.state) {
+      this.state.update(opts.state)
+      this.onUpdateState()
+    }
   }
 
   // these are all separate methods so that we can hook into them if need be
@@ -49,14 +51,6 @@ yorp.def('CanvasObject', yorp.Drawable, function (proto) {
     this.color = color
   }
 
-  this.updateState = function (props) {
-    var pos = this.state.position
-    this.state.update(props)
-    if (!Vec2.areEqual(pos, this.state.position)) {
-      this.afterUpdatingPosition()
-    }
-  }
-
   this.enableGravity = function () {
     this.hasGravity = true
   }
@@ -65,15 +59,51 @@ yorp.def('CanvasObject', yorp.Drawable, function (proto) {
     this.hasGravity = false
   }
 
-  this.update = function (gameTime, timeStep) {
-    this.updateProperties(gameTime, timeStep)
+  this.update = function (timeStep) {
+    var pos = Vec2.clone(this.state.position),
+        ori = this.state.orientation
+    this.advanceState(timeStep)
+    if (!Vec2.areEqual(this.state.position, pos) || this.state.orientation !== ori) {
+      this.onUpdateState()
+    }
   }
 
-  this.handleInput = function () {
+  this.handleInput = function (timeStep, speedFactor) {
     // do nothing by default
   }
 
-  this.calculateForces = function () {
+  this.render = function () {
+    this.renderState = this.state
+    this.draw()
+  }
+
+  this.advanceState = function (timeStep) {
+    this.handleInput(timeStep)
+  }
+
+  this.onUpdateState = function () {
+    this.updateBounds()
+  }
+
+  this.draw = function () {
+    throw "CanvasObject#draw must be overridden"
+  }
+
+  this.updateBounds = function () {
+    this.bounds = calculateBounds(this.dimensions)
+  }
+})
+
+yorp.withAutonomousUpdates = function (proto) {
+  this.advanceState = function (timeStep) {
+    var forces
+    proto.advanceState.apply(this, arguments)
+    forces = this.calculateForces(timeStep)
+    yorp.symplecticEulerIntegrator.advance(forces, this.state, timeStep)
+    this.fixCollisions()
+  }
+
+  this.calculateForces = function (timeStep) {
     return {
       force: Vec2(0,0),
       torque: 0
@@ -83,29 +113,5 @@ yorp.def('CanvasObject', yorp.Drawable, function (proto) {
   this.fixCollisions = function () {
     this.canvas.fixPossibleCollision(this)
   }
-
-  this.render = function () {
-    this.renderState = this.state
-    this.draw()
-  }
-
-  this.updateProperties = function (gameTime, timeStep) {
-    this.handleInput()
-  }
-
-  this.afterUpdatingPosition = function () {
-    this.updateBounds()
-  }
-
-  this.draw = function () {
-    throw "CanvasObject#draw must be overridden"
-  }
-
-  this.updateBounds = function () {
-    this.bounds = [
-      [0, 0],
-      [this.dimensions.width, this.dimensions.height]
-    ]
-  }
-})
+}
 

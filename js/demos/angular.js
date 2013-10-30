@@ -5,11 +5,12 @@
   var Vec2 = yorp.Vec2,
       keyboard = yorp.keyboard,
       Canvas = yorp.Canvas,
-      CanvasObject = yorp.CanvasObject,
       CanvasObjectCollection = yorp.CanvasObjectCollection,
+      Rectangle = yorp.Rectangle,
+      Triangle = yorp.Triangle,
 
       keys, keyTracker,
-      Plank, Projectile,
+      Projectile,
       canvas, canvasObjects, plank, projectile
 
   // TODO: Shorten this
@@ -19,102 +20,89 @@
   }))
   keyboard.addKeyTracker(keyTracker)
 
-  Plank = CanvasObject.clone(function (proto) {
-    this._setup = function () {
-      proto._setup.apply(this, arguments)
-      this.setDimensions({
-        width: 15,
-        height: this.canvas.height - 10
-      })
-      this.updateState({
-        position: Vec2((this.canvas.width / 2) - 100, this.canvas.height / 2),
-        orientation: -(yorp.math.TAU / 8),
-      })
-      this.disableGravity()
-    }
-
-    this.draw = function () {
-      var state = this.renderState,
-          dims = this.dimensions
-      this.canvas.rect(state.position[0], state.position[1], dims.width, dims.height, {
-        rotate: state.orientation,
-        stroke: 'black'
-      })
-    }
-  })
-
-  Projectile = CanvasObject.clone(
-    CanvasObject.hasAutonomousUpdates,
+  Projectile = Triangle.clone(
+    yorp.withAutonomousUpdates,
 
     function (proto) {
       this._setup = function () {
         proto._setup.apply(this, arguments)
-        this.setDimensions({width: 15, height: 12})
-        this.disableGravity()
         this.wasLaunched = false
       }
 
-      this.handleInput = function () {
+      this.handleInput = function (timeStep) {
         var state = this.state
         if (keyboard.isTrackedKeyPressed('KEY_LEFT')) {
-          state.orientation -= 0.05
+          state.orientation -= 0.005 * timeStep
         } else if (keyboard.isTrackedKeyPressed('KEY_RIGHT')) {
-          state.orientation += 0.05
+          state.orientation += 0.005 * timeStep
         }
         if (keyboard.isTrackedKeyPressed('KEY_SPACE') && !this.launchTime) {
           this.launchTime = (new Date()).getTime()
+          this.launchTimeElapsed = 0
           this.enableGravity()
         }
       }
 
-      this.calculateForces = function () {
+      this.calculateForces = function (timeStep) {
         var state = this.state,
-            forces = {force: Vec2(0,0), torque: 0},
-            launchTimeElapsed
+            forces = {force: Vec2(0,0), torque: 0}
 
         if (this.launchTime) {
-          launchTimeElapsed = (new Date()).getTime() - this.launchTime
-          if (launchTimeElapsed < 1000) {
-            forces.force = Vec2.fromPolarCoords(60, state.orientation)
+          this.launchTimeElapsed += timeStep
+          if (this.launchTimeElapsed < 300) {
+            forces.force = Vec2.fromPolarCoords(0.008, state.orientation)
           }
         }
 
         if (this.hasGravity) {
           // add gravity
-          Vec2.sub(forces.force, Vec2(0, -30))
+          Vec2.sub(forces.force, Vec2(0, -0.003))
         }
         // apply viscous damper force in the opposite direction
         // (from F = kx - cv)
-        Vec2.sub(forces.force, Vec2.nmul(state.velocity, 0.05))
-        Vec2.floor(forces.force, 0.001)
+        Vec2.sub(forces.force, Vec2.nmul(state.velocity, 0.0001))
+        //Vec2.floor(forces.force, 0.001)
 
         return forces
       }
-
-      this.draw = function () {
-        var dims = this.dimensions,
-            state = this.renderState,
-            color = (this.index == 0) ? "red" : "black"
-        this.canvas.triangle(state.position[0], state.position[1], dims.width, dims.height, {
-          rotate: state.orientation,
-          fill: color
-        })
-      }
-    })
+    }
+  )
 
   //---
 
   canvas = Canvas.create("#wrapper", {
-    width: 1000,
-    height: 400
+    dimensions: {
+      width: 1000,
+      height: 400
+    },
+    ticksPerSecond: 120,
+    speedFactor: 0.2
   })
   canvasObjects = canvas.buildObjectCollection(CanvasObjectCollection)
-  plank = canvasObjects.addObject(Plank)
-  projectile = canvasObjects.addObject(Projectile, {
+  plank = canvasObjects.addObject(Rectangle, {
+    dimensions: {
+      width: 15,
+      height: (canvas.dimensions.height - 10)
+    },
     state: {
-      position: Vec2(50, canvas.height - 50),
+      position: Vec2(
+        (canvas.dimensions.width / 2) - 100,
+        canvas.dimensions.height / 2
+      ),
+      orientation: -(yorp.math.TAU / 8),
+    },
+    hasGravity: false
+  })
+  projectile = canvasObjects.addObject(Projectile, {
+    dimensions: {
+      width: 15,
+      height: 12
+    },
+    state: {
+      position: Vec2(50, canvas.dimensions.height - 50),
       orientation: -(yorp.math.TAU / 8)
-    }
+    },
+    hasGravity: false
   })
   canvas.addEvents()
 
